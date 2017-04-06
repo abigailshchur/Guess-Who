@@ -21,22 +21,111 @@ h1 {
     text-align: center;
     font-size: 40px;
 }
-h2 { 
-    display: block;
-    font-size: 1.3em;
-    margin-top: 0.67em;
-    margin-bottom: 1.5em;
-    margin-left: 0;
-    margin-right: 0;
-    text-align: start;
+
+.button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
 }
+
 </style>
 
 <body>
 
+<div id="title" align="center">
 <h1>
 Guess Who?
 </h1>
+<button type="button" class="button" onclick="start()">New Game</button>
+</div>
+
+<div id="main" align="center">
+<svg id="ai" width="700" height="700" style="border: solid #ccc 1px;">
+    <foreignObject x="10" y="600" width="100" height="50">
+        <div>
+        <input type="text"></input>
+        </div>
+  </foreignObject>
+</svg>
+<svg id="human" width="700" height="700" style="border: solid #ccc 1px;"></svg>
+</div>
+
+<script>
+
+start();
+function start(){
+    var validDir = ["pics1", "pics2"];
+    var dir = prompt("Enter name of image directory:", validDir[0]);
+    if (validDir.indexOf(dir) < 0) {
+        dir = prompt("You need to pick a valid directory...Who knows what will happen if you mess up again.", validDir[0]);
+    }
+    var svg_ai = d3.select("#ai");
+    var svg_human = d3.select("#human");
+    svg_ai.selectAll(".ai_img").remove(); // might need to add more here
+    svg_human.selectAll(".human_img").remove();
+
+    var width = +svg_ai.attr("width"); var height = +svg_ai.attr("height");
+
+    // Titles for svg elements
+    svg_ai.append("text")
+        .text("AI")
+        .attr("x", width/2)
+        .attr("y", 35)
+        .attr("text-anchor","middle")
+        .attr("fill", "black");
+    svg_human.append("text")
+        .text("Human")
+        .attr("x", width/2)
+        .attr("y", 35)
+        .attr("text-anchor","middle")
+        .attr("fill", "black");
+
+    // Appending images
+    var padding_top = 50;
+    var padding_lr = 20;
+    var padding = 4;
+    var img_dim = (width - 2*padding_lr-5*padding)/6;
+    var img_number = 0;
+    for (var row = 0; row < 4; row++){
+        for (var col = 0; col < 6; col++){
+            svg_ai.append("image")
+                .attr("id","ai_img_" + img_number)
+                .attr("class", "ai_img")
+                .attr("x", padding_lr + (col)*padding + col*img_dim)
+                .attr("y", padding_top+ (row)*padding + (row)*img_dim)
+                .attr("height", img_dim)
+                .attr("width", img_dim)
+                .attr("href", dir+"/pic" + img_number + ".jpg")
+                .attr("xlink:href", dir+"/pic" + img_number + ".jpg");
+            svg_human.append("image")
+                .attr("id","human_img_" + img_number)
+                .attr("class", "human_img")
+                .attr("x", padding_lr + (col)*padding + col*img_dim)
+                .attr("y", padding_top+ (row)*padding + (row)*img_dim)
+                .attr("height", img_dim)
+                .attr("width", img_dim)
+                .attr("href", dir+"/pic" + img_number + ".jpg")
+                .attr("xlink:href", dir+"/pic" + img_number + ".jpg");
+            img_number++;
+        }
+    }
+}
+
+function startAI(){
+
+}
+
+function startHuman(){
+    
+}
+</script>
 
 
 </body>
