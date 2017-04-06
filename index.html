@@ -35,6 +35,7 @@ h1 {
     cursor: pointer;
 }
 
+
 </style>
 
 <body>
@@ -47,29 +48,62 @@ Guess Who?
 </div>
 
 <div id="main" align="center">
-<svg id="ai" width="700" height="700" style="border: solid #ccc 1px;">
-    <foreignObject x="10" y="600" width="100" height="50">
-        <div>
-        <input type="text"></input>
-        </div>
-  </foreignObject>
+<svg id="ai" width="700" height="625" style="border: solid #ccc 1px;">
+    <foreignObject x="125" y="520" width="300" height="70">
+                <input type="text" id="ai_ques"> AI Question </input>
+    </foreignObject>
+    <foreignObject x="125" y="560" width="300" height="70">
+        Human Answer:&nbsp &nbsp
+        <input type="checkbox" class="h_ans" value="yes">Yes&nbsp &nbsp&nbsp &nbsp
+        <input type="checkbox" class="h_ans" value="no">No 
+    </foreignObject>
 </svg>
-<svg id="human" width="700" height="700" style="border: solid #ccc 1px;"></svg>
+<svg id="human" width="700" height="625" style="border: solid #ccc 1px;">
+     <foreignObject x="125" y="520" width="300" height="70">
+                <input type="text" id="h_ques"> Human Question </input>
+    </foreignObject>
+    <foreignObject x="125" y="560" width="300" height="70">
+        AI Answer:&nbsp &nbsp
+        <input type="checkbox" class="ai_ans" value="yes">Yes&nbsp &nbsp&nbsp &nbsp
+        <input type="checkbox" class="ai_ans" value="no">No 
+    </foreignObject>
+</svg>
 </div>
 
 <script>
+// Global variables:
+var removed_ai; // array 0 to 23 representing whether ai removed choice i from running
+var removed_human;
+var ai_choice; // choice from 0 to 23
+var human_choice;
+var colors = ["blue","black","brown","yellow","green","red","white","gray"];
+var tones = ["light", "dark"];
+var genders = [{"female":["girl", "woman"]},
+                {"male": ["boy", "man"]}];
+var numberPattern = /\d+/g;
+var categories; // startAI() fills this in
+var started;
+var data;
+var dir; // directory
+var turn;
+var humanQuestion;
+var humanAnswer;
 
 start();
+
+
 function start(){
-    var validDir = ["pics1", "pics2"];
-    var dir = prompt("Enter name of image directory:", validDir[0]);
-    if (validDir.indexOf(dir) < 0) {
-        dir = prompt("You need to pick a valid directory...Who knows what will happen if you mess up again.", validDir[0]);
-    }
+    resetGlobals();
+    //var validDir = ["pics1", "pics2"];
+    //dir = prompt("Enter name of image directory:", validDir[0]);
+    //if (validDir.indexOf(dir) < 0) {
+    //    dir = prompt("You need to pick a valid directory...Who knows what will happen if you mess up again.", validDir[0]);
+    //}
+    dir = "pics1";
     var svg_ai = d3.select("#ai");
     var svg_human = d3.select("#human");
-    svg_ai.selectAll(".ai_img").remove(); // might need to add more here
-    svg_human.selectAll(".human_img").remove();
+    svg_ai.selectAll(".removable").remove();
+    svg_human.selectAll(".removable").remove();
 
     var width = +svg_ai.attr("width"); var height = +svg_ai.attr("height");
 
@@ -97,33 +131,233 @@ function start(){
         for (var col = 0; col < 6; col++){
             svg_ai.append("image")
                 .attr("id","ai_img_" + img_number)
-                .attr("class", "ai_img")
+                .attr("class", "removable")
                 .attr("x", padding_lr + (col)*padding + col*img_dim)
                 .attr("y", padding_top+ (row)*padding + (row)*img_dim)
                 .attr("height", img_dim)
                 .attr("width", img_dim)
                 .attr("href", dir+"/pic" + img_number + ".jpg")
-                .attr("xlink:href", dir+"/pic" + img_number + ".jpg");
+                .attr("xlink:href", dir+"/pic" + img_number + ".jpg")
+                .on("click", function(){
+                    blackOutImage(this.id);
+                });
             svg_human.append("image")
                 .attr("id","human_img_" + img_number)
-                .attr("class", "human_img")
+                .attr("class", "removable")
                 .attr("x", padding_lr + (col)*padding + col*img_dim)
                 .attr("y", padding_top+ (row)*padding + (row)*img_dim)
                 .attr("height", img_dim)
                 .attr("width", img_dim)
                 .attr("href", dir+"/pic" + img_number + ".jpg")
-                .attr("xlink:href", dir+"/pic" + img_number + ".jpg");
+                .attr("xlink:href", dir+"/pic" + img_number + ".jpg")
+                .on("click", function(){
+                    if (started){
+                        blackOutImage(this.id);
+                    }
+                    else{
+                        chooseHumanImg(this.id);
+                    }
+                });
             img_number++;
         }
     }
+    startAI(dir);
 }
 
-function startAI(){
+function resetGlobals(){
+    removed_ai = new Array(24+1).join('0').split('').map(parseFloat);
+    removed_human = new Array(24+1).join('0').split('').map(parseFloat);
+    ai_choice = Math.floor(Math.random() * 24);
+    categories = [];
+    ai_turn = 0;
+    human_turn = 0;
+    data = new Array(24);
+    started = false;
+    turn = 0;
+    human_choice = null;
+}
 
+function startAI(dir){
+    d3.json(dir+"/data.json", function(d) {
+        for (i = 0; i < d["pic0"].length; i++){
+            categories.push(Object.keys(d["pic0"][i])[0]);
+        }
+        for (i = 0; i < 24; i++) {
+            data[i] = new Array(categories.length);
+            for (j = 0; j<categories.length; j++){
+                if (d["pic"+i][j][categories[j]] === "yes"){
+                    data[i][j] = true;
+                }
+                else{
+                    data[i][j] = false;
+                }
+            }
+        }
+        startHuman();
+    });
 }
 
 function startHuman(){
+    // human goes first
+    var svg_human = d3.select("#human");
+    var width = +svg_human.attr("width"); var height = +svg_human.attr("height");
+    svg_human.append("rect")
+        .attr("width", 200)
+        .attr("height", 70)
+        .attr("class", "button")
+        .attr("x", width-250)
+        .attr("y", height-100)
+        .attr("rx",20)
+        .attr("ry",20)
+        .attr("fill","green")
+        .on("click", humanDone);
+    svg_human.append("text")
+        .attr("pointer-events", "none")
+        .text("Done With Turn")
+        .attr("x", width-250+100)
+        .attr("y", height-60)
+        .attr("text-anchor","middle")
+        .attr("fill", "white");
+
+}
+
+function humanDone(){
+    humanQuestion = document.getElementById('h_ques').value;
+    if (humanQuestion === ""){
+        alert("Please fill in a question for the AI.");
+        return;
+    }
+    if (turn > 0 && document.querySelector('.h_ans:checked') == null){
+        alert("Please answer the AIs question");
+        return;
+    }
+    if (turn > 0){
+        humanAnswer = document.querySelector('.h_ans:checked').value;
+    }
+    if (human_choice == null){
+        alert("Please pick an image for yourself.");
+        return;
+    }
+    aiTurn();
+
+}
+
+
+function aiTurn(){
+    console.log("i am ai hear me roar");
+
+    // uh ok lotsa code goes here
+
     
+    turn++;
+}
+
+function blackOutImage(id){
+    var pic_number = Number(id.match(numberPattern)[0]);
+    var ai = true;
+    if (id.indexOf("human") !== -1){
+        ai = false;
+    }
+    var image = d3.select("#"+id);
+    var size = image.attr("height");
+    var x = image.attr("x");
+    var y = image.attr("y");
+    var svg;
+    if (ai){
+        svg = d3.select("#ai");
+        removed_ai[pic_number] = 1;
+
+    }
+    else{
+        svg = d3.select("#human");
+        removed_human[pic_number] = 1;
+    }
+    svg.append("rect")
+        .attr("id", id+"_blackout")
+        .attr("class", "removable")
+        .attr("x",x)
+        .attr("y",y)
+        .attr("width", size)
+        .attr("height", size)
+        .attr("fill", "black")
+        .attr("opacity",0.8)
+        .on("click", function(){
+            unBlackOutImage(this.id);
+        });
+    
+}
+
+function unBlackOutImage(id){
+    var rect = d3.select("#"+id);
+    rect.remove();
+    var pic_number = Number(id.match(numberPattern)[0]);
+    var ai = true;
+    if (id.indexOf("human") !== -1){
+        ai = false;
+    }
+    if (ai){
+        removed_ai[pic_number] = 0;
+
+    }
+    else{
+        removed_human[pic_number] = 0;
+    }
+}
+
+function chooseHumanImg(id){
+    var svg_human = d3.select("#human");
+    var size = d3.select("#"+id).attr("width");
+    var pic_number = Number(id.match(numberPattern)[0]);
+    human_choice = pic_number;
+    svg_human.append("image")
+        .attr("id","chosen_human_img_" + pic_number)
+        .attr("class", "removable")
+        .attr("x", 20)
+        .attr("y", svg_human.attr("height")-5-size)
+        .attr("height", size)
+        .attr("width", size)
+        .attr("href", dir+"/pic" + pic_number + ".jpg")
+        .attr("xlink:href", dir+"/pic" + pic_number + ".jpg");
+
+        // add AI image as well
+        var svg_ai = d3.select("#ai");
+        svg_ai.append("image")
+            .attr("id","chosen_ai_img_" + ai_choice)
+            .attr("class", "removable")
+            .attr("x", 20)
+            .attr("y", svg_ai.attr("height")-5-size)
+            .attr("height", size)
+            .attr("width", size)
+            .attr("href", dir+"/pic" + ai_choice + ".jpg")
+            .attr("xlink:href", dir+"/pic" + ai_choice + ".jpg")
+            .on("click", function(){
+                blackOutAIChoice(this.id);
+            });
+        blackOutAIChoice("chosen_ai_img_" + ai_choice);
+    started = true;
+}
+
+function blackOutAIChoice(id){
+    var pic = d3.select("#"+id);
+    var svg_ai = d3.select("#ai");
+    var pic_number = Number(id.match(numberPattern)[0]);
+    svg_ai.append("rect")
+        .attr("id","chosen_ai_img_blackout" + pic_number)
+        .attr("class", "removable")
+        .attr("x", 20)
+        .attr("y", svg_ai.attr("height")-5-pic.attr("height"))
+        .attr("height", pic.attr("height"))
+        .attr("width", pic.attr("height"))
+        .attr("fill", "black")
+        .on("click", function(){
+            unBlackOutAIChoice(this.id);
+        });
+
+}
+
+function unBlackOutAIChoice(id){
+    var rect = d3.select("#"+id);
+    rect.remove();
 }
 </script>
 
