@@ -54,8 +54,8 @@ Guess Who?
     </foreignObject>
     <foreignObject x="125" y="560" width="300" height="70">
         Human Answer:&nbsp &nbsp
-        <input type="checkbox" class="h_ans" value="yes">Yes&nbsp &nbsp&nbsp &nbsp
-        <input type="checkbox" class="h_ans" value="no">No 
+        <input type="checkbox" id="human_ans_yes" class="h_ans" value="yes">Yes&nbsp &nbsp&nbsp &nbsp
+        <input type="checkbox" id="human_ans_no" class="h_ans" value="no">No 
     </foreignObject>
 </svg>
 <svg id="human" width="700" height="625" style="border: solid #ccc 1px;">
@@ -64,8 +64,8 @@ Guess Who?
     </foreignObject>
     <foreignObject x="125" y="560" width="300" height="70">
         AI Answer:&nbsp &nbsp
-        <input type="checkbox" class="ai_ans" value="yes">Yes&nbsp &nbsp&nbsp &nbsp
-        <input type="checkbox" class="ai_ans" value="no">No 
+        <input type="checkbox" id="ai_ans_yes" class="ai_ans" value="yes">Yes&nbsp &nbsp&nbsp &nbsp
+        <input type="checkbox" id="ai_ans_no" class="ai_ans" value="no">No 
     </foreignObject>
 </svg>
 </div>
@@ -82,12 +82,15 @@ var genders = [{"female":["girl", "woman"]},
                 {"male": ["boy", "man"]}];
 var numberPattern = /\d+/g;
 var categories; // startAI() fills this in
+var categories_answered;
+var catToIdx;
 var started;
 var data;
 var dir; // directory
 var turn;
 var humanQuestion;
 var humanAnswer;
+var currentAIQ;
 
 start();
 
@@ -175,12 +178,15 @@ function resetGlobals(){
     started = false;
     turn = 0;
     human_choice = null;
+    catToIdx = {};
+    categories_answered = [];
 }
 
 function startAI(dir){
     d3.json(dir+"/data.json", function(d) {
         for (i = 0; i < d["pic0"].length; i++){
             categories.push(Object.keys(d["pic0"][i])[0]);
+            catToIdx[Object.keys(d["pic0"][i])[0]] = i;
         }
         for (i = 0; i < 24; i++) {
             data[i] = new Array(categories.length);
@@ -244,12 +250,71 @@ function humanDone(){
 
 
 function aiTurn(){
-    console.log("i am ai hear me roar");
+    console.log("ai turn");
+    if (turn > 0){
+        // deal with answer from human
+        console.log("dealing with human answer");
+        var lookingFor = (humanAnswer === "yes");
+        console.log(lookingFor);
+        for (i = 0; i < 24; i++){
+            var person = data[i];
+            if (person[catToIdx[currentAIQ]] != lookingFor){
+                // blackout person
+                console.log("blacking out");
+                blackOutImage("ai_img_" + i);
+            }
+        }
+        categories_answered.push(currentAIQ);
+    }
 
-    // uh ok lotsa code goes here
 
-    
+    // deal with answering question from human
+    var humanQDecoded = humanQuestionToCat();
+    if (humanQDecoded == null){
+        // popup
+        window.alert("sorry I'm a dumb AI, please cheat, look at my person, then answer the question for yourself");
+    }
+    else{
+        // check if user has that category and return answer
+        if (data[ai_choice][catToIdx[humanQDecoded]] == true){
+            document.getElementById("ai_ans_yes").checked = true;
+            document.getElementById("ai_ans_no").checked = false;
+        }
+        else{
+            document.getElementById("ai_ans_yes").checked = false;
+            document.getElementById("ai_ans_no").checked = true;
+        }
+    }
+    document.getElementById("human_ans_yes").checked = false;
+    document.getElementById("human_ans_no").checked = false;
+
+    // deal with asking question to user
+    if (categories_answered.length == categories.length){
+        // AI ran out of questions
+        window.alert("AI Ran Out of Questions to Ask, Human Wins");
+    }
+    else{
+        var pickedOne = false;
+        while (!pickedOne){
+            var choice = Math.floor(Math.random() * (categories.length));
+            if (categories_answered.indexOf(categories[i])<0){
+                currentAIQ = categories[choice];
+                pickedOne = true;
+            }
+        }
+        document.getElementById('ai_ques').value=currentAIQ; 
+        //document.getElementById('human_ques').value=""; 
+    }
     turn++;
+}
+
+function humanQuestionToCat(){
+    if (catToIdx[humanQuestion] == null){
+        return null;
+    }
+    else{
+        return humanQuestion;
+    }
 }
 
 function blackOutImage(id){
