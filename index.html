@@ -44,6 +44,9 @@ h1 {
 <h1>
 Guess Who?
 </h1>
+<h2>
+First, select a character on the human side. Then type in a question on the human side for the AI. Press "Done With Turn". The AI will immediatley respond to the human question and it will ask its own question. Answer the AI question, put a new question for the AI. Human should also click on images that they do not believe the AI chose. Press "Done With Turn" and continue this process until the AI gives up or either player has one person left and that person is correct.
+</h2>
 <button type="button" class="button" onclick="start()">New Game</button>
 </div>
 
@@ -67,6 +70,9 @@ Guess Who?
         <input type="checkbox" id="ai_ans_yes" class="ai_ans" value="yes">Yes&nbsp &nbsp&nbsp &nbsp
         <input type="checkbox" id="ai_ans_no" class="ai_ans" value="no">No 
     </foreignObject>
+    <foreignObject x="125" y="600" width="300" height="70">
+                <input type="text" id="h_ques_prev"> Old Human Question </input>
+    </foreignObject>
 </svg>
 </div>
 
@@ -78,8 +84,9 @@ var ai_choice; // choice from 0 to 23
 var human_choice;
 var colors = ["blue","black","brown","yellow","green","red","white","gray"];
 var tones = ["light", "dark"];
-var genders = [{"female":["girl", "woman"]},
-                {"male": ["boy", "man"]}];
+var lengths = ["short", "long", "round", "square", "medium"];
+var genders = {"female":["girl", "woman"],
+                "male": ["boy", "man"]};
 var numberPattern = /\d+/g;
 var categories; // startAI() fills this in
 var categories_answered;
@@ -91,6 +98,7 @@ var turn;
 var humanQuestion;
 var humanAnswer;
 var currentAIQ;
+var negateUserQ;
 
 start();
 
@@ -180,6 +188,7 @@ function resetGlobals(){
     human_choice = null;
     catToIdx = {};
     categories_answered = [];
+    negateUserQ = false;
 }
 
 function startAI(dir){
@@ -250,21 +259,16 @@ function humanDone(){
 
 
 function aiTurn(){
-    console.log("ai turn");
     if (turn > 0){
         // deal with answer from human
-        console.log("dealing with human answer");
         var lookingFor = (humanAnswer === "yes");
-        console.log(lookingFor);
         for (i = 0; i < 24; i++){
             var person = data[i];
             if (person[catToIdx[currentAIQ]] != lookingFor){
                 // blackout person
-                console.log("blacking out");
                 blackOutImage("ai_img_" + i);
             }
         }
-        categories_answered.push(currentAIQ);
     }
 
 
@@ -277,12 +281,26 @@ function aiTurn(){
     else{
         // check if user has that category and return answer
         if (data[ai_choice][catToIdx[humanQDecoded]] == true){
-            document.getElementById("ai_ans_yes").checked = true;
-            document.getElementById("ai_ans_no").checked = false;
+            if (!negateUserQ){
+                document.getElementById("ai_ans_yes").checked = true;
+                document.getElementById("ai_ans_no").checked = false;
+            }
+            else{
+                document.getElementById("ai_ans_yes").checked = false;
+                document.getElementById("ai_ans_no").checked = true;
+            }
+            
         }
         else{
-            document.getElementById("ai_ans_yes").checked = false;
-            document.getElementById("ai_ans_no").checked = true;
+            if (!negateUserQ){
+                document.getElementById("ai_ans_yes").checked = false;
+                document.getElementById("ai_ans_no").checked = true;
+            }
+            else{
+                document.getElementById("ai_ans_yes").checked = true;
+                document.getElementById("ai_ans_no").checked = false;
+            }
+            
         }
     }
     document.getElementById("human_ans_yes").checked = false;
@@ -297,23 +315,99 @@ function aiTurn(){
         var pickedOne = false;
         while (!pickedOne){
             var choice = Math.floor(Math.random() * (categories.length));
-            if (categories_answered.indexOf(categories[i])<0){
+            if (categories_answered.indexOf(categories[choice])<0){
                 currentAIQ = categories[choice];
                 pickedOne = true;
             }
         }
-        document.getElementById('ai_ques').value=currentAIQ; 
-        //document.getElementById('human_ques').value=""; 
+        categories_answered.push(currentAIQ);
+        document.getElementById('ai_ques').value=formulateAIQ(currentAIQ);
+        document.getElementById('h_ques_prev').value=humanQuestion;
+        document.getElementById('h_ques').value=""; 
     }
     turn++;
 }
 
+/*
+ * TODO
+ */
 function humanQuestionToCat(){
-    if (catToIdx[humanQuestion] == null){
-        return null;
+    negateUserQ = false;
+    var hq = humanQuestion.toLowerCase();
+    var oldLen = hq.length;
+    hq = hq.replace("?", "");
+    while(hq.length != oldLen){
+        oldLen = hq.length;
+        hq = hq.replace("?", "");
+    }
+    hq = hq.replace(/\s+/g, " ").trim();
+    if (catToIdx[hq] != null){
+        return hq;
+    }
+    var words = hq.split(" ");
+    if (words.length == 1){
+        // might be another gender term
+        if (words[0] === "female" || genders["female"].indexOf(words[0]) >= 0){
+            negateUserQ = true;
+            return "male";
+        }
+        if (genders["male"].indexOf(words[0]) >= 0){
+            return "male";
+        }
+    }
+    else if (words.length == 2){
+        // check gender
+        if (words[1] === "female" || genders["female"].indexOf(words[1]) >= 0){
+            negateUserQ = true;
+            return "male";
+        }
+        if (words[1] === "male" || genders["male"].indexOf(words[1]) >= 0){
+            return "male";
+        }
     }
     else{
-        return humanQuestion;
+        if (words.indexOf("not") >=0 || words.indexOf("no") >= 0){
+            negateUserQ = true;
+        }
+        while (words.indexOf("not") >= 0){
+            var index = words.indexOf("not");
+            words.splice(index, 1);
+        }
+        while (words.indexOf("no") >= 0){
+            var index = words.indexOf("no");
+            words.splice(index, 1);
+        }
+        // now just check if last two words are ok
+        if (words.length >= 2){
+            if (catToIdx[words[words.length-2]+" "+words[words.length-1]] != null){
+                return words[words.length-2]+" "+words[words.length-1];
+            }
+        }
+        if (catToIdx[words[words.length-1]] != null){
+            return words[words.length-1];
+        }
+        if (words[words.length-1] === "female" || genders["female"].indexOf(words[words.length-1]) >= 0){
+            negateUserQ = true;
+            return "male";
+        }
+        if (genders["male"].indexOf(words[words.length-1]) >= 0){
+            return "male";
+        }
+    }
+    return null;
+}
+
+/*
+ * TODO
+ */ 
+function formulateAIQ(q){
+    var words = q.split(" ");
+    var first = words[0];
+    if (colors.indexOf(first)>=0 || tones.indexOf(first)>=0 || lengths.indexOf(first)>=0){
+        return "Do you have " + q + "?";
+    }
+    else{
+        return "Are you " + q + "?";
     }
 }
 
@@ -329,13 +423,31 @@ function blackOutImage(id){
     var y = image.attr("y");
     var svg;
     if (ai){
-        svg = d3.select("#ai");
-        removed_ai[pic_number] = 1;
-
+        if (removed_ai[pic_number] == 0){
+            svg = d3.select("#ai");
+            removed_ai[pic_number] = 1;
+        }
+        else{
+            return;
+        }
     }
     else{
         svg = d3.select("#human");
         removed_human[pic_number] = 1;
+        if (d3.sum(removed_human) == 23){
+            var human_winner;
+            for (i = 0; i < 24; i++){
+                if (removed_human[i]==0){
+                   human_winner = i; 
+                }
+            }
+            if (human_winner == ai_choice){
+                window.alert("Human Won!");
+            }
+            else{
+                window.alert("AI Won, human picked wrong choice.");
+            }
+        }
     }
     svg.append("rect")
         .attr("id", id+"_blackout")
