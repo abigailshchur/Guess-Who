@@ -15,5 +15,5 @@ Abby:
 
 Claire:
 - [ ] Formatting of question text
-- [ ] Adding more features
+- [X] Adding more features
 - [ ] Part 1 writeup
