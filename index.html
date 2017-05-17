@@ -312,14 +312,35 @@ function aiTurn(){
         window.alert("AI Ran Out of Questions to Ask, Human Wins");
     }
     else{
-        var pickedOne = false;
-        while (!pickedOne){
-            var choice = Math.floor(Math.random() * (categories.length));
-            if (categories_answered.indexOf(categories[choice])<0){
-                currentAIQ = categories[choice];
-                pickedOne = true;
+        //console.log(categories_answered);
+    //console.log(categories);
+    //console.log(data);
+        // Need to ask question of max entropy
+        var num_possible_cats = categories.length - categories_answered.length;
+        var entropy = [];
+        var entropy_to_cat = [];
+        for (i = 0; i < categories.length; i++){
+            if (categories_answered.indexOf(categories[i]) < 0){
+                var p = 0;
+                var n = 0;
+                for (j=0; j < data.length; j++){
+                    if (!removed_ai[j]){
+                        // ai has not removed this person
+                        if (data[j][i]){
+                            p++;
+                        }
+                        else{
+                            n++;
+                        }
+                    }
+                }
+                entropy.push((-1*(p/(p+n))*Math.log(p/(p+n)))+(-1*(n/(p+n))*Math.log(n/(p+n))));
+                entropy_to_cat.push(i);
             }
         }
+        var index = entropy.indexOf(d3.max(entropy));
+        currentAIQ = categories[entropy_to_cat[index]];
+
         categories_answered.push(currentAIQ);
         document.getElementById('ai_ques').value=formulateAIQ(currentAIQ);
         document.getElementById('h_ques_prev').value=humanQuestion;
