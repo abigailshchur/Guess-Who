@@ -10,6 +10,7 @@ Abby:
 - [ ] AI choice bug
 - [ ] Ending game stuff
 - [ ] General UI issues
+- [ ] Scripts to do fun stuff to files
 
 
 Claire:
