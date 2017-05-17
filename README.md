@@ -6,13 +6,13 @@ List of Bugs:
 
 Abby:
 - [X] Do anything
-- [] New game issues
-- [] AI choice bug
-- [] Ending game stuff
-- [] General UI issues
+- [ ] New game issues
+- [ ] AI choice bug
+- [ ] Ending game stuff
+- [ ] General UI issues
 
 
 Claire:
-- [] Formatting of question text
-- [] Adding more features
-- [] Part 1 writeup
+- [ ] Formatting of question text
+- [ ] Adding more features
+- [ ] Part 1 writeup
