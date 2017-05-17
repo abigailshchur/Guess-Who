@@ -1,9 +1,5 @@
 # Guess-Who
-Features 
-* white
-* dark background
-* smiling
-* outdoors
-* long face
-* mustache
-* bangs
+List of Bugs:
+* New game does not work
+* Fixing AI choice does not work
+* Nothing ending game when AI wins
