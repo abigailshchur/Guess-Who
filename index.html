@@ -210,6 +210,13 @@ function resetGlobals(){
     catToIdx = {};
     categories_answered = [];
     negateUserQ = false;
+    document.getElementById("ai_ans_yes").checked = false;
+    document.getElementById("ai_ans_no").checked = false;
+    document.getElementById("human_ans_yes").checked = false;
+    document.getElementById("human_ans_no").checked = false;
+    document.getElementById('h_ques').value=""; 
+    document.getElementById('ai_ques').value=""; 
+    document.getElementById('h_ques_prev').value=""; 
 }
 
 function startAI(dir){
@@ -291,6 +298,10 @@ function aiTurn(){
             }
         }
     }
+    // check if won
+    //if (removed_ai.length==categories.length-1){
+     //   if ()
+    //}
 
 
     // deal with answering question from human
@@ -333,9 +344,6 @@ function aiTurn(){
         window.alert("AI Ran Out of Questions to Ask, Human Wins");
     }
     else{
-        //console.log(categories_answered);
-    //console.log(categories);
-    //console.log(data);
         // Need to ask question of max entropy
         var num_possible_cats = categories.length - categories_answered.length;
         var entropy = [];
@@ -515,6 +523,7 @@ function unBlackOutImage(id){
         ai = false;
     }
     if (ai){
+        console.log("this");
         removed_ai[pic_number] = 0;
 
     }

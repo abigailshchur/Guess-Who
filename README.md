@@ -5,12 +5,14 @@ List of Bugs:
 * Nothing ending game when AI wins
 
 Abby:
-- [X] Do anything
-- [ ] New game issues
-- [ ] AI choice bug
-- [ ] Ending game stuff
+- [X] New game issues
+- [X] AI choice bug
+- [ ] Ending game bugs
+- [ ] Add code to number people
+- [ ] End game on asking number of person
 - [ ] General UI issues
-- [ ] Scripts to do fun stuff to files
+- [X] Script to pick 24 random images
+- [X] Start SVM
 
 
 Claire:
