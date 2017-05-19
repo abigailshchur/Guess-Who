@@ -34,7 +34,9 @@
                 <button id="button2" class="btn" style="vertical-align:middle; visibility: hidden;" onclick="click_button2();"><span> Done With Turn </span></button>
     </foreignObject>
 	</svg>
-	<button class="button" style="vertical-align:middle" onclick="location.reload();"><span>Reset </span></button>
+	<div style="text-align:center;">
+	<button class="button" style="vertical-align:middle;" onclick="location.reload();"><span>Reset </span></button>
+	</div>
 	<h2> Sample Questions: </h2>
 	<h3 >Is your character male?</h3>
 	<h3>Is your character smiling?</h3>
@@ -112,6 +114,7 @@ var idk = ["I don't know..", "not sure", "I don't understand your question :(", 
 
 
 function human_turn(){
+	document.body.style.backgroundColor = "#e3e7ea";
 	turn++;
 	is_human_turn = true;
 	images_svg.selectAll("*").remove();
@@ -121,6 +124,7 @@ function human_turn(){
 }
 
 function ai_turn(){
+	document.body.style.backgroundColor = "#ffe5e5";
 	turn++;
 	human_question = "";
 	is_human_turn = false;
