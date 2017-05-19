@@ -13,22 +13,17 @@
 	<div style="text-align:center;">
 		<svg id="human_options" width="800" height="600"> </svg>
 		<div id="step2" style="visibility: hidden;">
-			<h2> Step 2: (The AI also picked a character) Ask the AI a question. </br> </br> Make sure it can be answered with "yes" or "no". </h2>
+			<h2> Step 2: Start the Game! </h2>
 			<div style="text-align:center;">
-				<input id="input" type="text" name="human_question"><br>
 				<button class="button" style="vertical-align:middle" onclick="start()"><span>Start </span></button>
 			</div>
-			<h2> Sample Questions: </h2>
-			<h3 >Is your character male?</h3>
-			<h3>Is your character smiling?</h3>
-			<h3>Does your character have dark hair?</h3>
 		</div>
 	</div>
 </div>
 
 <div id="game" style="visibility: hidden; text-align:center;">
-	<svg id="images" width="800" height="600" style="border: solid #ccc 5px;"> </svg>
-	<svg id="output" width="800" height="600" style="border: solid #ccc 5px;"> 
+	<svg id="images" width="800" height="600"> </svg>
+	<svg id="output" width="800" height="600"> 
 	<foreignObject x="-350" y="120", height="100", width="1500">
                 <input type="text" id="input1"> </input> </br>
                 <button id="ask_ai_button" class="btn" style="vertical-align:middle" onclick="ask_ai();"><span> Ask AI </span></button>
@@ -36,11 +31,14 @@
     <foreignObject x="-350" y="260", height="100", width="1500" style="visibility: hidden;">
                 <input type="text" id="input2"> </input>
                 </br>
-                <button id="done_human" class="btn" style="vertical-align:middle; visibility: hidden;" onclick="ai_turn();"><span> Done With Turn </span></button>
-                <button id="human_ans_btn" class="btn" style="vertical-align:middle; visibility: hidden;" onclick="handle_human_answer();"><span> Done Answering</span></button>
+                <button id="button2" class="btn" style="vertical-align:middle; visibility: hidden;" onclick="click_button2();"><span> Done With Turn </span></button>
     </foreignObject>
 	</svg>
 	<button class="button" style="vertical-align:middle" onclick="location.reload();"><span>Reset </span></button>
+	<h2> Sample Questions: </h2>
+	<h3 >Is your character male?</h3>
+	<h3>Is your character smiling?</h3>
+	<h3>Does your character have dark hair?</h3>
 </div>
 </body>
 
@@ -92,18 +90,12 @@ function chooseHumanImg(img_id){
 }
 
 function start(){
-	human_question = document.getElementById('input').value;
-	if (human_question.length == 0){
-		window.alert("Please type a question in.");
-	}
-	else{
-		var elem = document.getElementById("init");
-		elem.parentNode.removeChild(elem);
-		ai_choice = Math.floor(Math.random() * 24);
-		document.getElementById("game").style.visibility="visible";
-		human_turn();
-	}
-
+	human_question = "";
+	var elem = document.getElementById("init");
+	elem.parentNode.removeChild(elem);
+	ai_choice = Math.floor(Math.random() * 24);
+	document.getElementById("game").style.visibility="visible";
+	human_turn();
 }
 
 // GAME PLAY CODE BELOW
@@ -114,6 +106,9 @@ var removed_ai = new Array(24+1).join('0').split('').map(parseFloat);
 var removed_human = new Array(24+1).join('0').split('').map(parseFloat);
 var is_human_turn = true;
 var turn = 0;
+var yes = ["yes", "yup", "yeah", "yes!", "yeah!", "yup!", "yea", "yea!", "affirmative"];
+var no = ["no", "nope", "nah", "no!", "nope!", "nah!", "negative"];
+var idk = ["I don't know..", "not sure", "I don't understand your question :(", "No comprendo", "lol idk sorry", "Alas I was not programmed to understand your question."];
 
 
 function human_turn(){
@@ -166,14 +161,17 @@ function set_up_human(){
 	var width = +svg.attr("width"); var height = +svg.attr("height");
 	svg.append("text").text("Human Turn").attr("class", "output_title").attr("x", width/2).attr("y", 40).style("fill","#110D8C");
 	svg.append("text").text('Question for AI (must have "yes" or "no" answer):').attr("class", "output_text").attr("x", 30).attr("y", 100).style("fill","#110D8C");
-	svg.append("text").text('Human Choice').attr("class", "output_text").attr("x", 500).attr("y", height-150).style("font-size", "20px").style("fill","#110D8C");
-    svg.append("text").text('AI Choice').attr("class", "output_text").attr("x", 210).attr("y", height-150).style("font-size", "20px").style("fill","#110D8C");
+	svg.append("text").text('Human Choice').attr("class", "output_text").attr("x", 500).attr("y", height-175).style("font-size", "20px").style("fill","#110D8C");
+    svg.append("text").text('AI Choice').attr("class", "output_text").attr("x", 210).attr("y", height-175).style("font-size", "20px").style("fill","#110D8C");
 	if (turn==1){
-		svg.append("image").attr("x", 505).attr("y", height-140).attr("height", 130).attr("width", 130).attr("href", dir+"/pic" + human_choice + ".jpg").attr("xlink:href", dir+"/pic" + human_choice + ".jpg");
-		svg.append("image").attr("x", 195).attr("y", height-140).attr("height", 130).attr("width", 130).attr("href", dir+"/pic" + ai_choice + ".jpg").attr("xlink:href", dir+"/pic" + ai_choice + ".jpg");
+		svg.append("image").attr("x", 505).attr("y", height-165).attr("height", img_dim).attr("width", img_dim).attr("href", dir+"/pic" + human_choice + ".jpg").attr("xlink:href", dir+"/pic" + human_choice + ".jpg");
+		svg.append("image").attr("x", 195).attr("y", height-165).attr("height", img_dim).attr("width", img_dim).attr("href", dir+"/pic" + ai_choice + ".jpg").attr("xlink:href", dir+"/pic" + ai_choice + ".jpg");
 	}
 	document.getElementById('input1').value=human_question;
 	document.getElementById('input2').value=""; 
+	document.getElementById("button2").style.visibility="hidden";
+	document.getElementById("input2").style.visibility="hidden";
+	document.getElementById("ask_ai_button").style.visibility="visible";
 }
 
 function ask_ai(){
@@ -187,23 +185,25 @@ function ask_ai(){
 	svg.append("text").text('Answer from AI:').attr("class", "output_text").attr("x", 30).attr("y", 240).style("fill","#110D8C");
 	document.getElementById("input2").style.visibility="visible";
 	document.getElementById('input2').value=get_ai_answer(); 
-	document.getElementById("done_human").style.visibility="visible";
+	document.getElementById("button2").style.visibility="visible";
+	document.getElementById("button2").innerText = "Done With Turn";
 }
 
 function set_up_ai(){
 	var svg = output_svg;
-	document.getElementById("done_human").style.visibility="hidden";
 	document.getElementById('input1').value=get_ai_question();
 	svg.append("text").text("AI Turn").attr("class", "output_title").attr("x", width/2).attr("y", 40).style("fill","#660000");
 	svg.append("text").text('Question for human from AI:').attr("class", "output_text").attr("x", 30).attr("y", 100).style("fill","#660000");
 	svg.append("text").text('Answer from human:').attr("class", "output_text").attr("x", 30).attr("y", 240).style("fill","#660000");
-	svg.append("text").text('Human Choice').attr("class", "output_text").attr("x", 500).attr("y", height-150).style("font-size", "20px").style("fill","#660000");
-    svg.append("text").text('AI Choice').attr("class", "output_text").attr("x", 210).attr("y", height-150).style("font-size", "20px").style("fill","#660000");
-    document.getElementById("human_ans_btn").style.visibility="visible";
+	svg.append("text").text('Human Choice').attr("class", "output_text").attr("x", 500).attr("y", height-175).style("font-size", "20px").style("fill","#660000");
+    svg.append("text").text('AI Choice').attr("class", "output_text").attr("x", 210).attr("y", height-175).style("font-size", "20px").style("fill","#660000");
+    document.getElementById("button2").style.visibility="visible";
+    document.getElementById("button2").innerText = "Done Answering";
+    document.getElementById('input2').value=""; 
 }
 
 function get_ai_answer(){
-	return "lol idk";
+	return idk[ Math.floor(Math.random() * idk.length)];
 }
 
 function get_ai_question(){
@@ -212,6 +212,18 @@ function get_ai_question(){
 
 function handle_human_answer(){
 	console.log("ai should do something here");
+}
+
+function click_button2(){
+	if (is_human_turn){
+		ai_turn();
+	}
+	else if (document.getElementById("button2").innerText === "Done Answering"){
+		document.getElementById("button2").innerText = "Done With AI Turn";
+	}
+	else{
+		human_turn();
+	}
 }
 </script>
 

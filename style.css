@@ -81,23 +81,19 @@ input[type=text]:focus {
 
 
 .btn {
-  background: #34d981;
-  background-image: -webkit-linear-gradient(top, #34d981, #1f913d);
-  background-image: -moz-linear-gradient(top, #34d981, #1f913d);
-  background-image: -ms-linear-gradient(top, #34d981, #1f913d);
-  background-image: -o-linear-gradient(top, #34d981, #1f913d);
-  background-image: linear-gradient(to bottom, #34d981, #1f913d);
-  -webkit-border-radius: 16;
-  -moz-border-radius: 16;
-  border-radius: 16px;
-  font-family: Arial;
-  color: #ffffff;
-  font-size: 17px;
-  padding: 10px 20px 10px 20px;
-  text-decoration: none;
+  display: inline-block;
+  border-radius: 20px;
+  background-image: linear-gradient(to bottom, #34d997, #2bb82b);
+  border: none;
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 20px;
+  padding: 8px;
+  cursor: pointer;
+  margin: 5px;
 }
 
 .btn:hover {
-  background: #386e14;
+  background: #158c15;
   text-decoration: none;
 }
