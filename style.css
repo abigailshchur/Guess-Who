@@ -97,3 +97,7 @@ input[type=text]:focus {
   background: #158c15;
   text-decoration: none;
 }
+
+.clickable_image:hover {
+    cursor: pointer;
+}
