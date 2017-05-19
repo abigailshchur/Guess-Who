@@ -1,594 +1,218 @@
 <html>
 <head>
 <title>Guess Who</title>
-<link href="https://fonts.googleapis.com/css?family=Alegreya|Alegreya+Sans" rel="stylesheet">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<link rel="stylesheet" type="text/css" href="style.css">
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
 <script src="https://rawgit.com/jasondavies/d3-cloud/master/build/d3.layout.cloud.js"></script>
 
-<style>
-
-body { font-family: 'Century Gothic', Calibri, sans-serif; font-size: 14; background-color: #F9F9DE}
-h1 { 
-    display: block;
-    font-size: 2em;
-    margin-top: 0.67em;
-    margin-bottom: 0.67em;
-    margin-left: 0;
-    margin-right: 0;
-    font-weight: bold;
-    text-align: center;
-    font-size: 40px;
-}
-
-h2 { 
-    display: block;
-    margin-top: 0.67em;
-    margin-bottom: 0.67em;
-    margin-left: 0;
-    margin-right: 0;
-    font-weight: bold;
-    text-align: center;
-    font-size: 30px;
-}
-
-.button {
-    background-color: #4CAF50;
-    border: none;
-    color: white;
-    padding: 15px 32px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
-}
-
-
-</style>
-
 <body>
-
-<div id="title" align="center">
-<h1>
-Guess Who?
-</h1>
-<h2>
-First, select a character on the human side. Then type in a question on the human side for the AI. Press "Done With Turn". The AI will immediatley respond to the human question and it will ask its own question. Answer the AI question, put a new question for the AI. Human should also click on images that they do not believe the AI chose. Press "Done With Turn" and continue this process until the AI gives up or either player has one person left and that person is correct.
-</h2>
-<button type="button" class="button" onclick="start()">New Game</button>
+<h1>Guess Who?</h1>
+<div id="init">
+	<h2> Step 1: Pick a character for the AI to try and guess.</h2>
+	<div style="text-align:center;">
+		<svg id="human_options" width="800" height="600"> </svg>
+		<div id="step2" style="visibility: hidden;">
+			<h2> Step 2: (The AI also picked a character) Ask the AI a question. </br> </br> Make sure it can be answered with "yes" or "no". </h2>
+			<div style="text-align:center;">
+				<input id="input" type="text" name="human_question"><br>
+				<button class="button" style="vertical-align:middle" onclick="start()"><span>Start </span></button>
+			</div>
+			<h2> Sample Questions: </h2>
+			<h3 >Is your character male?</h3>
+			<h3>Is your character smiling?</h3>
+			<h3>Does your character have dark hair?</h3>
+		</div>
+	</div>
 </div>
 
-<div id="main" align="center">
-<svg id="ai" width="700" height="625" style="border: solid #ccc 1px;">
-    <foreignObject x="125" y="520" width="300" height="70">
-                <input type="text" id="ai_ques"> AI Question </input>
+<div id="game" style="visibility: hidden; text-align:center;">
+	<svg id="images" width="800" height="600" style="border: solid #ccc 5px;"> </svg>
+	<svg id="output" width="800" height="600" style="border: solid #ccc 5px;"> 
+	<foreignObject x="-350" y="120", height="100", width="1500">
+                <input type="text" id="input1"> </input> </br>
+                <button id="ask_ai_button" class="btn" style="vertical-align:middle" onclick="ask_ai();"><span> Ask AI </span></button>
     </foreignObject>
-    <foreignObject x="125" y="560" width="300" height="70">
-        Human Answer:&nbsp &nbsp
-        <input type="checkbox" id="human_ans_yes" class="h_ans" value="yes">Yes&nbsp &nbsp&nbsp &nbsp
-        <input type="checkbox" id="human_ans_no" class="h_ans" value="no">No 
+    <foreignObject x="-350" y="260", height="100", width="1500" style="visibility: hidden;">
+                <input type="text" id="input2"> </input>
+                </br>
+                <button id="done_human" class="btn" style="vertical-align:middle; visibility: hidden;" onclick="ai_turn();"><span> Done With Turn </span></button>
+                <button id="human_ans_btn" class="btn" style="vertical-align:middle; visibility: hidden;" onclick="handle_human_answer();"><span> Done Answering</span></button>
     </foreignObject>
-</svg>
-<svg id="human" width="700" height="625" style="border: solid #ccc 1px;">
-     <foreignObject x="125" y="520" width="300" height="70">
-                <input type="text" id="h_ques"> Human Question </input>
-    </foreignObject>
-    <foreignObject x="125" y="560" width="300" height="70">
-        AI Answer:&nbsp &nbsp
-        <input type="checkbox" id="ai_ans_yes" class="ai_ans" value="yes">Yes&nbsp &nbsp&nbsp &nbsp
-        <input type="checkbox" id="ai_ans_no" class="ai_ans" value="no">No 
-    </foreignObject>
-    <foreignObject x="125" y="600" width="300" height="70">
-                <input type="text" id="h_ques_prev"> Old Human Question </input>
-    </foreignObject>
-</svg>
+	</svg>
+	<button class="button" style="vertical-align:middle" onclick="location.reload();"><span>Reset </span></button>
 </div>
-<div>
-<h1>
-Suggested Questions:
-</h1>
-<h2>
-male</br>
-female</br>
-blue shirt</br>
-etc
-</h2>
-</div>
+</body>
+
 <script>
-// Global variables:
-var removed_ai; // array 0 to 23 representing whether ai removed choice i from running
-var removed_human;
-var ai_choice; // choice from 0 to 23
 var human_choice;
-var colors = ["blue","black","brown","yellow","green","red","white","gray"];
-var tones = ["light", "dark"];
-var lengths = ["short", "long", "round", "square", "medium"];
-var genders = {"female":["girl", "woman"],
-                "male": ["boy", "man"]};
-var numberPattern = /\d+/g;
-var categories; // startAI() fills this in
-var categories_answered;
-var catToIdx;
-var started;
-var data;
-var dir; // directory
-var turn;
-var humanQuestion;
-var humanAnswer;
-var currentAIQ;
-var negateUserQ;
+var human_question;
+var ai_choice;
 
-start();
+var dir = "pics1";
 
+var svg = d3.select("#human_options");
+
+var width = +svg.attr("width"); var height = +svg.attr("height");
+
+var padding_top = 50;
+var padding_lr = 20;
+var padding = 4;
+var img_dim = (width - 2*padding_lr-5*padding)/6;
+var img_number = 0;
+for (var row = 0; row < 4; row++){
+    for (var col = 0; col < 6; col++){
+        svg.append("image")
+            .attr("id","human_img_" + img_number)
+            .attr("x", padding_lr + (col)*padding + col*img_dim)
+            .attr("y", padding_top+ (row)*padding + (row)*img_dim)
+            .attr("height", img_dim)
+            .attr("width", img_dim)
+            .attr("href", dir+"/pic" + img_number + ".jpg")
+            .attr("xlink:href", dir+"/pic" + img_number + ".jpg")
+            .on("click", function(){ chooseHumanImg(this.id);});
+        img_number++;
+    }
+}
+
+function chooseHumanImg(img_id){
+	var numberPattern = /\d+/g;
+	svg.selectAll("*").remove();
+	var pic_number = Number(img_id.match(numberPattern)[0]);
+	human_choice = pic_number;
+	document.getElementById('human_options').setAttribute("height", "300px");
+	svg.append("image")
+		.attr("x", width/2-270/2)
+		.attr("y", 0)
+		.attr("height", 270)
+		.attr("width", 270)
+		.attr("href", dir+"/pic" + pic_number + ".jpg")
+        .attr("xlink:href", dir+"/pic" + pic_number + ".jpg");
+    document.getElementById("step2").style.visibility="visible";
+}
 
 function start(){
-    resetGlobals();
-    //var validDir = ["pics1", "pics2"];
-    //dir = prompt("Enter name of image directory:", validDir[0]);
-    //if (validDir.indexOf(dir) < 0) {
-    //    dir = prompt("You need to pick a valid directory...Who knows what will happen if you mess up again.", validDir[0]);
-    //}
-    dir = "pics1";
-    var svg_ai = d3.select("#ai");
-    var svg_human = d3.select("#human");
-    svg_ai.selectAll(".removable").remove();
-    svg_human.selectAll(".removable").remove();
-
-    var width = +svg_ai.attr("width"); var height = +svg_ai.attr("height");
-
-    // Titles for svg elements
-    svg_ai.append("text")
-        .text("AI")
-        .attr("x", width/2)
-        .attr("y", 35)
-        .attr("text-anchor","middle")
-        .attr("fill", "black");
-    svg_human.append("text")
-        .text("Human")
-        .attr("x", width/2)
-        .attr("y", 35)
-        .attr("text-anchor","middle")
-        .attr("fill", "black");
-
-    // Appending images
-    var padding_top = 50;
-    var padding_lr = 20;
-    var padding = 4;
-    var img_dim = (width - 2*padding_lr-5*padding)/6;
-    var img_number = 0;
-    for (var row = 0; row < 4; row++){
-        for (var col = 0; col < 6; col++){
-            svg_ai.append("image")
-                .attr("id","ai_img_" + img_number)
-                .attr("class", "removable")
-                .attr("x", padding_lr + (col)*padding + col*img_dim)
-                .attr("y", padding_top+ (row)*padding + (row)*img_dim)
-                .attr("height", img_dim)
-                .attr("width", img_dim)
-                .attr("href", dir+"/pic" + img_number + ".jpg")
-                .attr("xlink:href", dir+"/pic" + img_number + ".jpg")
-                .on("click", function(){
-                    blackOutImage(this.id);
-                });
-            svg_human.append("image")
-                .attr("id","human_img_" + img_number)
-                .attr("class", "removable")
-                .attr("x", padding_lr + (col)*padding + col*img_dim)
-                .attr("y", padding_top+ (row)*padding + (row)*img_dim)
-                .attr("height", img_dim)
-                .attr("width", img_dim)
-                .attr("href", dir+"/pic" + img_number + ".jpg")
-                .attr("xlink:href", dir+"/pic" + img_number + ".jpg")
-                .on("click", function(){
-                    if (started){
-                        blackOutImage(this.id);
-                    }
-                    else{
-                        chooseHumanImg(this.id);
-                    }
-                });
-            img_number++;
-        }
-    }
-    startAI(dir);
-}
-
-function resetGlobals(){
-    removed_ai = new Array(24+1).join('0').split('').map(parseFloat);
-    removed_human = new Array(24+1).join('0').split('').map(parseFloat);
-    ai_choice = Math.floor(Math.random() * 24);
-    categories = [];
-    ai_turn = 0;
-    human_turn = 0;
-    data = new Array(24);
-    started = false;
-    turn = 0;
-    human_choice = null;
-    catToIdx = {};
-    categories_answered = [];
-    negateUserQ = false;
-    document.getElementById("ai_ans_yes").checked = false;
-    document.getElementById("ai_ans_no").checked = false;
-    document.getElementById("human_ans_yes").checked = false;
-    document.getElementById("human_ans_no").checked = false;
-    document.getElementById('h_ques').value=""; 
-    document.getElementById('ai_ques').value=""; 
-    document.getElementById('h_ques_prev').value=""; 
-}
-
-function startAI(dir){
-    d3.json(dir+"/data.json", function(d) {
-        for (i = 0; i < d["pic0"].length; i++){
-            categories.push(Object.keys(d["pic0"][i])[0]);
-            catToIdx[Object.keys(d["pic0"][i])[0]] = i;
-        }
-        for (i = 0; i < 24; i++) {
-            data[i] = new Array(categories.length);
-            for (j = 0; j<categories.length; j++){
-                if (d["pic"+i][j][categories[j]] === "yes"){
-                    data[i][j] = true;
-                }
-                else{
-                    data[i][j] = false;
-                }
-            }
-        }
-        startHuman();
-    });
-}
-
-function startHuman(){
-    // human goes first
-    var svg_human = d3.select("#human");
-    var width = +svg_human.attr("width"); var height = +svg_human.attr("height");
-    svg_human.append("rect")
-        .attr("width", 200)
-        .attr("height", 70)
-        .attr("class", "button")
-        .attr("x", width-250)
-        .attr("y", height-100)
-        .attr("rx",20)
-        .attr("ry",20)
-        .attr("fill","green")
-        .on("click", humanDone);
-    svg_human.append("text")
-        .attr("pointer-events", "none")
-        .text("Done With Turn")
-        .attr("x", width-250+100)
-        .attr("y", height-60)
-        .attr("text-anchor","middle")
-        .attr("fill", "white");
+	human_question = document.getElementById('input').value;
+	if (human_question.length == 0){
+		window.alert("Please type a question in.");
+	}
+	else{
+		var elem = document.getElementById("init");
+		elem.parentNode.removeChild(elem);
+		ai_choice = Math.floor(Math.random() * 24);
+		document.getElementById("game").style.visibility="visible";
+		human_turn();
+	}
 
 }
 
-function humanDone(){
-    humanQuestion = document.getElementById('h_ques').value;
-    if (humanQuestion === ""){
-        alert("Please fill in a question for the AI.");
-        return;
-    }
-    if (turn > 0 && document.querySelector('.h_ans:checked') == null){
-        alert("Please answer the AIs question");
-        return;
-    }
-    if (turn > 0){
-        humanAnswer = document.querySelector('.h_ans:checked').value;
-    }
-    if (human_choice == null){
-        alert("Please pick an image for yourself.");
-        return;
-    }
-    aiTurn();
+// GAME PLAY CODE BELOW
+
+var images_svg = d3.select("#images");
+var output_svg = d3.select("#output");
+var removed_ai = new Array(24+1).join('0').split('').map(parseFloat);
+var removed_human = new Array(24+1).join('0').split('').map(parseFloat);
+var is_human_turn = true;
+var turn = 0;
+
+
+function human_turn(){
+	turn++;
+	is_human_turn = true;
+	images_svg.selectAll("*").remove();
+	output_svg.selectAll("text").remove();
+	display_images();
+	set_up_human();
+}
+
+function ai_turn(){
+	turn++;
+	human_question = "";
+	is_human_turn = false;
+	images_svg.selectAll("*").remove();
+	output_svg.selectAll("text").remove();
+	display_images();
+	set_up_ai();
 
 }
 
-
-function aiTurn(){
-    if (turn > 0){
-        // deal with answer from human
-        var lookingFor = (humanAnswer === "yes");
-        for (i = 0; i < 24; i++){
-            var person = data[i];
-            if (person[catToIdx[currentAIQ]] != lookingFor){
-                // blackout person
-                blackOutImage("ai_img_" + i);
-            }
-        }
-    }
-    // check if won
-    //if (removed_ai.length==categories.length-1){
-     //   if ()
-    //}
-
-
-    // deal with answering question from human
-    var humanQDecoded = humanQuestionToCat();
-    if (humanQDecoded == null){
-        // popup
-        window.alert("sorry I'm a dumb AI, please cheat, look at my person, then answer the question for yourself");
-    }
-    else{
-        // check if user has that category and return answer
-        if (data[ai_choice][catToIdx[humanQDecoded]] == true){
-            if (!negateUserQ){
-                document.getElementById("ai_ans_yes").checked = true;
-                document.getElementById("ai_ans_no").checked = false;
-            }
-            else{
-                document.getElementById("ai_ans_yes").checked = false;
-                document.getElementById("ai_ans_no").checked = true;
-            }
-            
-        }
-        else{
-            if (!negateUserQ){
-                document.getElementById("ai_ans_yes").checked = false;
-                document.getElementById("ai_ans_no").checked = true;
-            }
-            else{
-                document.getElementById("ai_ans_yes").checked = true;
-                document.getElementById("ai_ans_no").checked = false;
-            }
-            
-        }
-    }
-    document.getElementById("human_ans_yes").checked = false;
-    document.getElementById("human_ans_no").checked = false;
-
-    // deal with asking question to user
-    if (categories_answered.length == categories.length){
-        // AI ran out of questions
-        window.alert("AI Ran Out of Questions to Ask, Human Wins");
-    }
-    else{
-        // Need to ask question of max entropy
-        var num_possible_cats = categories.length - categories_answered.length;
-        var entropy = [];
-        var entropy_to_cat = [];
-        for (i = 0; i < categories.length; i++){
-            if (categories_answered.indexOf(categories[i]) < 0){
-                var p = 0;
-                var n = 0;
-                for (j=0; j < data.length; j++){
-                    if (!removed_ai[j]){
-                        // ai has not removed this person
-                        if (data[j][i]){
-                            p++;
-                        }
-                        else{
-                            n++;
-                        }
-                    }
-                }
-                entropy.push((-1*(p/(p+n))*Math.log(p/(p+n)))+(-1*(n/(p+n))*Math.log(n/(p+n))));
-                entropy_to_cat.push(i);
-            }
-        }
-        var index = entropy.indexOf(d3.max(entropy));
-        currentAIQ = categories[entropy_to_cat[index]];
-
-        categories_answered.push(currentAIQ);
-        document.getElementById('ai_ques').value=formulateAIQ(currentAIQ);
-        document.getElementById('h_ques_prev').value=humanQuestion;
-        document.getElementById('h_ques').value=""; 
-    }
-    turn++;
-}
-
-/*
- * TODO
- */
-function humanQuestionToCat(){
-    negateUserQ = false;
-    var hq = humanQuestion.toLowerCase();
-    var oldLen = hq.length;
-    hq = hq.replace("?", "");
-    while(hq.length != oldLen){
-        oldLen = hq.length;
-        hq = hq.replace("?", "");
-    }
-    hq = hq.replace(/\s+/g, " ").trim();
-    if (catToIdx[hq] != null){
-        return hq;
-    }
-    var words = hq.split(" ");
-    if (words.length == 1){
-        // might be another gender term
-        if (words[0] === "female" || genders["female"].indexOf(words[0]) >= 0){
-            negateUserQ = true;
-            return "male";
-        }
-        if (genders["male"].indexOf(words[0]) >= 0){
-            return "male";
-        }
-    }
-    else if (words.length == 2){
-        // check gender
-        if (words[1] === "female" || genders["female"].indexOf(words[1]) >= 0){
-            negateUserQ = true;
-            return "male";
-        }
-        if (words[1] === "male" || genders["male"].indexOf(words[1]) >= 0){
-            return "male";
-        }
-    }
-    else{
-        if (words.indexOf("not") >=0 || words.indexOf("no") >= 0){
-            negateUserQ = true;
-        }
-        while (words.indexOf("not") >= 0){
-            var index = words.indexOf("not");
-            words.splice(index, 1);
-        }
-        while (words.indexOf("no") >= 0){
-            var index = words.indexOf("no");
-            words.splice(index, 1);
-        }
-        // now just check if last two words are ok
-        if (words.length >= 2){
-            if (catToIdx[words[words.length-2]+" "+words[words.length-1]] != null){
-                return words[words.length-2]+" "+words[words.length-1];
-            }
-        }
-        if (catToIdx[words[words.length-1]] != null){
-            return words[words.length-1];
-        }
-        if (words[words.length-1] === "female" || genders["female"].indexOf(words[words.length-1]) >= 0){
-            negateUserQ = true;
-            return "male";
-        }
-        if (genders["male"].indexOf(words[words.length-1]) >= 0){
-            return "male";
-        }
-    }
-    return null;
-}
-
-/*
- * TODO
- */ 
-function formulateAIQ(q){
-    var words = q.split(" ");
-    var first = words[0];
-    if (colors.indexOf(first)>=0 || tones.indexOf(first)>=0 || lengths.indexOf(first)>=0){
-        return "Do you have " + q + "?";
-    }
-    else{
-        return "Are you " + q + "?";
-    }
-}
-
-function blackOutImage(id){
-    var pic_number = Number(id.match(numberPattern)[0]);
-    var ai = true;
-    if (id.indexOf("human") !== -1){
-        ai = false;
-    }
-    var image = d3.select("#"+id);
-    var size = image.attr("height");
-    var x = image.attr("x");
-    var y = image.attr("y");
-    var svg;
-    if (ai){
-        if (removed_ai[pic_number] == 0){
-            svg = d3.select("#ai");
-            removed_ai[pic_number] = 1;
-        }
-        else{
-            return;
-        }
-    }
-    else{
-        svg = d3.select("#human");
-        removed_human[pic_number] = 1;
-        if (d3.sum(removed_human) == 23){
-            var human_winner;
-            for (i = 0; i < 24; i++){
-                if (removed_human[i]==0){
-                   human_winner = i; 
-                }
-            }
-            if (human_winner == ai_choice){
-                window.alert("Human Won!");
-            }
-            else{
-                window.alert("AI Won, human picked wrong choice.");
-            }
-        }
-    }
-    svg.append("rect")
-        .attr("id", id+"_blackout")
-        .attr("class", "removable")
-        .attr("x",x)
-        .attr("y",y)
-        .attr("width", size)
-        .attr("height", size)
-        .attr("fill", "black")
-        .attr("opacity",0.8)
-        .on("click", function(){
-            unBlackOutImage(this.id);
-        });
-    
-}
-
-function unBlackOutImage(id){
-    var rect = d3.select("#"+id);
-    rect.remove();
-    var pic_number = Number(id.match(numberPattern)[0]);
-    var ai = true;
-    if (id.indexOf("human") !== -1){
-        ai = false;
-    }
-    if (ai){
-        console.log("this");
-        removed_ai[pic_number] = 0;
-
-    }
-    else{
-        removed_human[pic_number] = 0;
-    }
-}
-
-function chooseHumanImg(id){
-    var svg_human = d3.select("#human");
-    var size = d3.select("#"+id).attr("width");
-    var pic_number = Number(id.match(numberPattern)[0]);
-    human_choice = pic_number;
-    svg_human.append("image")
-        .attr("id","chosen_human_img_" + pic_number)
-        .attr("class", "removable")
-        .attr("x", 20)
-        .attr("y", svg_human.attr("height")-5-size)
-        .attr("height", size)
-        .attr("width", size)
-        .attr("href", dir+"/pic" + pic_number + ".jpg")
-        .attr("xlink:href", dir+"/pic" + pic_number + ".jpg");
-
-        // add AI image as well
-        var svg_ai = d3.select("#ai");
-        svg_ai.append("image")
-            .attr("id","chosen_ai_img_" + ai_choice)
-            .attr("class", "removable")
-            .attr("x", 20)
-            .attr("y", svg_ai.attr("height")-5-size)
-            .attr("height", size)
-            .attr("width", size)
-            .attr("href", dir+"/pic" + ai_choice + ".jpg")
-            .attr("xlink:href", dir+"/pic" + ai_choice + ".jpg")
-            .on("click", function(){
-                blackOutAIChoice(this.id);
-            });
-        blackOutAIChoice("chosen_ai_img_" + ai_choice);
-    started = true;
-}
-
-function blackOutAIChoice(id){
-    var pic = d3.select("#"+id);
-    var svg_ai = d3.select("#ai");
-    var pic_number = Number(id.match(numberPattern)[0]);
-    svg_ai.append("rect")
-        .attr("id","chosen_ai_img_blackout" + pic_number)
-        .attr("class", "removable")
-        .attr("x", 20)
-        .attr("y", svg_ai.attr("height")-5-pic.attr("height"))
-        .attr("height", pic.attr("height"))
-        .attr("width", pic.attr("height"))
-        .attr("fill", "black")
-        .on("click", function(){
-            unBlackOutAIChoice(this.id);
-        });
+function display_images(){
+	var svg = images_svg;
+	var width = +svg.attr("width"); var height = +svg.attr("height");
+	var padding_top = 50;
+	var padding_lr = 20;
+	var padding = 4;
+	var img_dim = (width - 2*padding_lr-5*padding)/6;
+	var img_number = 0;
+	for (var row = 0; row < 4; row++){
+    	for (var col = 0; col < 6; col++){
+        	svg.append("image")
+            .attr("id","human_img_" + img_number)
+            .attr("x", padding_lr + (col)*padding + col*img_dim)
+            .attr("y", padding_top+ (row)*padding + (row)*img_dim)
+            .attr("height", img_dim)
+            .attr("width", img_dim)
+            .attr("href", dir+"/pic" + img_number + ".jpg")
+            .attr("xlink:href", dir+"/pic" + img_number + ".jpg")
+            .on("click", function(){console.log("clicked image "+this.id);});
+        img_number++;
+    	}
+	}
 
 }
 
-function unBlackOutAIChoice(id){
-    var rect = d3.select("#"+id);
-    rect.remove();
+function set_up_human(){
+	var svg = output_svg;
+	var width = +svg.attr("width"); var height = +svg.attr("height");
+	svg.append("text").text("Human Turn").attr("class", "output_title").attr("x", width/2).attr("y", 40).style("fill","#110D8C");
+	svg.append("text").text('Question for AI (must have "yes" or "no" answer):').attr("class", "output_text").attr("x", 30).attr("y", 100).style("fill","#110D8C");
+	svg.append("text").text('Human Choice').attr("class", "output_text").attr("x", 500).attr("y", height-150).style("font-size", "20px").style("fill","#110D8C");
+    svg.append("text").text('AI Choice').attr("class", "output_text").attr("x", 210).attr("y", height-150).style("font-size", "20px").style("fill","#110D8C");
+	if (turn==1){
+		svg.append("image").attr("x", 505).attr("y", height-140).attr("height", 130).attr("width", 130).attr("href", dir+"/pic" + human_choice + ".jpg").attr("xlink:href", dir+"/pic" + human_choice + ".jpg");
+		svg.append("image").attr("x", 195).attr("y", height-140).attr("height", 130).attr("width", 130).attr("href", dir+"/pic" + ai_choice + ".jpg").attr("xlink:href", dir+"/pic" + ai_choice + ".jpg");
+	}
+	document.getElementById('input1').value=human_question;
+	document.getElementById('input2').value=""; 
+}
+
+function ask_ai(){
+	var svg = output_svg;
+	human_question = document.getElementById('input1').value;
+	if (human_question.length == 0){
+		window.alert("Please type in a question.");
+		return;
+	}
+	document.getElementById("ask_ai_button").style.visibility="hidden";
+	svg.append("text").text('Answer from AI:').attr("class", "output_text").attr("x", 30).attr("y", 240).style("fill","#110D8C");
+	document.getElementById("input2").style.visibility="visible";
+	document.getElementById('input2').value=get_ai_answer(); 
+	document.getElementById("done_human").style.visibility="visible";
+}
+
+function set_up_ai(){
+	var svg = output_svg;
+	document.getElementById("done_human").style.visibility="hidden";
+	document.getElementById('input1').value=get_ai_question();
+	svg.append("text").text("AI Turn").attr("class", "output_title").attr("x", width/2).attr("y", 40).style("fill","#660000");
+	svg.append("text").text('Question for human from AI:').attr("class", "output_text").attr("x", 30).attr("y", 100).style("fill","#660000");
+	svg.append("text").text('Answer from human:').attr("class", "output_text").attr("x", 30).attr("y", 240).style("fill","#660000");
+	svg.append("text").text('Human Choice').attr("class", "output_text").attr("x", 500).attr("y", height-150).style("font-size", "20px").style("fill","#660000");
+    svg.append("text").text('AI Choice').attr("class", "output_text").attr("x", 210).attr("y", height-150).style("font-size", "20px").style("fill","#660000");
+    document.getElementById("human_ans_btn").style.visibility="visible";
+}
+
+function get_ai_answer(){
+	return "lol idk";
+}
+
+function get_ai_question(){
+	return "what are questions";
+}
+
+function handle_human_answer(){
+	console.log("ai should do something here");
 }
 </script>
 
-
-</body>
 </html>
