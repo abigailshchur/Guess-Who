@@ -315,6 +315,30 @@ function click_button2(){
 	}
 }
 
+function ai_win(){
+	var svg = images_svg;
+	svg.selectAll("*").remove();
+	svg.append("image")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("height", 300)
+    .attr("width", 800)
+    .attr("href", "loser.gif")
+    .attr("xlink:href", "loser.gif");
+    svg.append("text")
+        .text("AI Won. You Lost. How Embarassing.")
+        .attr("x", width/2)
+        .attr("y", height/2+100)
+        .attr("fill", "#660000")
+        .style("text-anchor","middle")
+        .style("font-weight", "bold")
+        .style("font-size","50px")
+        .style("font-variant","small-caps");
+        document.getElementById("button2").style.visibility="hidden";
+        game_over = true;
+        un_black_out_ai_choice();
+}
+
 var data = new Array(24);;
 var categories = [];
 var categories_answered = [];
@@ -361,22 +385,9 @@ function get_ai_answer(){
 		if (number == ai_choice){
 			var svg = images_svg;
 			svg.selectAll("*").remove();
-			svg.append("image")
-            .attr("x", 0)
-            .attr("y", 0)
-            .attr("height", 600)
-            .attr("width", 800)
-            .attr("href", "fireworks.gif")
-            .attr("xlink:href", "fireworks.gif");
-            svg.append("text")
-            .text("You Won!")
-            .attr("x", width/2)
-            .attr("y", height/2)
-            .attr("fill", "#110D8C")
-            .style("text-anchor","middle")
-            .style("font-weight", "bold")
-            .style("font-size","50px")
-            .style("font-variant","small-caps");
+			svg.append("image").attr("x", 0).attr("y", 0).attr("height", 600).attr("width", 800).attr("href", "fireworks.gif").attr("xlink:href", "fireworks.gif");
+            svg.append("text").text("You Won!").attr("x", width/2).attr("y", height/2).attr("fill", "#110D8C").style("text-anchor","middle").style("font-weight", "bold")
+            	.style("font-size","50px").style("font-variant","small-caps");
             document.getElementById("button2").style.visibility="hidden";
             game_over = true;
             un_black_out_ai_choice();
@@ -483,6 +494,11 @@ function humanQuestionToCat(){
  * Returns question for the AI to ask (asks optimally using entropy calculation)
  */
 function get_ai_question(){
+	if (d3.sum(removed_ai) == removed_ai.length-1){
+		// ai question will just ask number of player
+		ai_question = String(removed_ai.indexOf(0));
+		return "Did you pick character number "+ai_question+"?";
+	}
 	if (categories_answered.length == categories.length){
         // AI ran out of questions
         window.alert("Ran out of questions, need to deal with this.");
@@ -543,11 +559,16 @@ function formulateAIQ(q){
 function handle_human_answer(){
 	var human_ans = document.getElementById('input2').value; 
 	human_ans = human_ans.toLowerCase();
+	var numberPattern = /\d+/g;
 	if (yes.indexOf(human_ans)>=0){
 		human_ans = true;
 	}
 	else{
 		human_ans = false;
+	}
+	if (ai_question.match(numberPattern) != null && human_ans){
+		ai_win();
+		return;
 	}
 	for (i=0; i < 24; i++){
 		if (data[i][catToIdx[ai_question]]!=human_ans &&!removed_ai[i]==1){
