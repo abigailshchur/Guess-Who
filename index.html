@@ -47,6 +47,7 @@
 <script>
 var human_choice;
 var human_question;
+var ai_question;
 var ai_choice;
 
 var dir = "pics1";
@@ -122,6 +123,11 @@ function human_turn(){
 	output_svg.selectAll("text").remove();
 	display_images();
 	set_up_human();
+	for (i=0; i<removed_human.length; i++){
+		if (removed_human[i]==1){
+			black_out_image("human_img_"+i);
+		}
+	}
 }
 
 function ai_turn(){
@@ -133,6 +139,11 @@ function ai_turn(){
 	output_svg.selectAll("text").remove();
 	display_images();
 	set_up_ai();
+	for (i=0; i<removed_ai.length; i++){
+		if (removed_ai[i]==1){
+			black_out_image("ai_img_"+i);
+		}
+	}
 
 }
 
@@ -241,10 +252,10 @@ function un_black_out_image(id){
     rect.remove();
     var pic_number = Number(id.match(numberPattern)[0]);
     if (is_human_turn){
-    	removed_human[img_number] = 0;
+    	removed_human[pic_number] = 0;
     }
     else{
-    	removed_ai[img_number] = 0;
+    	removed_ai[pic_number] = 0;
     }
 }
 
@@ -265,29 +276,234 @@ function un_black_out_ai_choice(){
 	rect.remove();
 }
 
-function get_ai_answer(){
-	return idk[ Math.floor(Math.random() * idk.length)];
-}
-
-function get_ai_question(){
-	return "what are questions";
-}
-
-function handle_human_answer(){
-	console.log("ai should do something here");
-}
-
 function click_button2(){
 	if (is_human_turn){
 		ai_turn();
 	}
 	else if (document.getElementById("button2").innerText === "Done Answering"){
+		handle_human_answer();
 		document.getElementById("button2").innerText = "Done With AI Turn";
 	}
 	else{
 		human_turn();
 	}
 }
+
+var data = new Array(24);;
+var categories = [];
+var categories_answered = [];
+var catToIdx = {};
+
+d3.json(dir+"/data.json", function(d) {
+    for (i = 0; i < d["pic0"].length; i++){
+        categories.push(Object.keys(d["pic0"][i])[0]);
+        catToIdx[Object.keys(d["pic0"][i])[0]] = i;
+    }
+    for (i = 0; i < 24; i++) {
+        data[i] = new Array(categories.length);
+        for (j = 0; j<categories.length; j++){
+            if (d["pic"+i][j][categories[j]] === "yes"){
+                data[i][j] = true;
+            }
+            else{
+                data[i][j] = false;
+            }
+        }
+    }
+});
+
+var colors = ["blue","black","brown","yellow","green","red","white","gray"];
+var tones = ["light", "dark"];
+var lengths = ["short", "long", "round", "square", "medium"];
+var genders = {"female":["girl", "woman"],
+                "male": ["boy", "man"]};
+var adjectives = ["visible"];
+var negateUserQ = false
+
+/*
+ * All important AI Code is below
+ */
+
+/*
+ * When human asks a question, AI needs to respond with yes or no answer
+ */
+function get_ai_answer(){
+	var current_cat = humanQuestionToCat();
+	if (current_cat == null){
+		return idk[Math.floor(Math.random() * idk.length)];
+	}
+	if (data[ai_choice][catToIdx[current_cat]]){
+		if (negateUserQ){
+			return no[Math.floor(Math.random() * no.length)];
+		}
+		else{
+			return yes[Math.floor(Math.random() * yes.length)];
+		}
+		
+	}
+	else{
+		if (negateUserQ){
+			return yes[Math.floor(Math.random() * yes.length)];
+		}
+		else{
+			return no[Math.floor(Math.random() * no.length)];
+		}
+	}
+}
+
+/*
+ * TODO
+ * Returns category corresponding to human question
+ */
+function humanQuestionToCat(){
+    negateUserQ = false;
+    var hq = human_question.toLowerCase();
+    var oldLen = hq.length;
+    hq = hq.replace("?", "");
+    while(hq.length != oldLen){
+        oldLen = hq.length;
+        hq = hq.replace("?", "");
+    }
+    hq = hq.replace(/\s+/g, " ").trim();
+    if (catToIdx[hq] != null){
+        return hq;
+    }
+    var words = hq.split(" ");
+    if (words.length == 1){
+        // might be another gender term
+        if (words[0] === "female" || genders["female"].indexOf(words[0]) >= 0){
+            negateUserQ = true;
+            return "male";
+        }
+        if (genders["male"].indexOf(words[0]) >= 0){
+            return "male";
+        }
+    }
+    else if (words.length == 2){
+        // check gender
+        if (words[1] === "female" || genders["female"].indexOf(words[1]) >= 0){
+            negateUserQ = true;
+            return "male";
+        }
+        if (words[1] === "male" || genders["male"].indexOf(words[1]) >= 0){
+            return "male";
+        }
+    }
+    else{
+        if (words.indexOf("not") >=0 || words.indexOf("no") >= 0){
+            negateUserQ = true;
+        }
+        while (words.indexOf("not") >= 0){
+            var index = words.indexOf("not");
+            words.splice(index, 1);
+        }
+        while (words.indexOf("no") >= 0){
+            var index = words.indexOf("no");
+            words.splice(index, 1);
+        }
+        // now just check if last two words are ok
+        if (words.length >= 2){
+            if (catToIdx[words[words.length-2]+" "+words[words.length-1]] != null){
+                return words[words.length-2]+" "+words[words.length-1];
+            }
+        }
+        if (catToIdx[words[words.length-1]] != null){
+            return words[words.length-1];
+        }
+        if (words[words.length-1] === "female" || genders["female"].indexOf(words[words.length-1]) >= 0){
+            negateUserQ = true;
+            return "male";
+        }
+        if (genders["male"].indexOf(words[words.length-1]) >= 0){
+            return "male";
+        }
+    }
+    return null;
+}
+
+/*
+ * Returns question for the AI to ask (asks optimally using entropy calculation)
+ */
+function get_ai_question(){
+	if (categories_answered.length == categories.length){
+        // AI ran out of questions
+        window.alert("Ran out of questions, need to deal with this.");
+    }
+    else{
+        // Need to ask question of max entropy
+        var num_possible_cats = categories.length - categories_answered.length;
+        var entropy = [];
+        var entropy_to_cat = [];
+        for (i = 0; i < categories.length; i++){
+            if (categories_answered.indexOf(categories[i]) < 0){
+                var p = 0;
+                var n = 0;
+                for (j=0; j < data.length; j++){
+                    if (!removed_ai[j]){
+                        // ai has not removed this person
+                        if (data[j][i]){
+                            p++;
+                        }
+                        else{
+                            n++;
+                        }
+                    }
+                }
+                entropy.push((-1*(p/(p+n))*Math.log(p/(p+n)))+(-1*(n/(p+n))*Math.log(n/(p+n))));
+                entropy_to_cat.push(i);
+            }
+        }
+        var index = entropy.indexOf(d3.max(entropy));
+        ai_question = categories[entropy_to_cat[index]];
+
+        categories_answered.push(ai_question);
+    }
+	return formulateAIQ(ai_question);
+}
+
+
+/*
+ * Creates a proper question to output to user.
+ */ 
+function formulateAIQ(q){
+    var words = q.split(" ");
+    var first = words[0];
+    if (colors.indexOf(first)>=0 || tones.indexOf(first)>=0 || lengths.indexOf(first)>=0){
+        return "Do they have " + q + "?";
+    }
+    else if (adjectives.indexOf(first)>=0){
+    	return "Do they have a " + q + "?";
+    }
+    else{
+        return "Are they " + q + "?";
+    }
+}
+
+/*
+ * Deal with human answer to AI question
+ */
+function handle_human_answer(){
+	var human_ans = document.getElementById('input2').value; 
+	human_ans = human_ans.toLowerCase();
+	console.log("this happened");
+	if (yes.indexOf(human_ans)>=0){
+		human_ans = true;
+	}
+	else{
+		human_ans = false;
+	}
+	console.log(human_ans);
+	for (i=0; i < 24; i++){
+		if (data[i][catToIdx[ai_question]]!=human_ans){
+			black_out_image("ai_img_"+i);
+		}
+	}
+}
+
+
+
+
+
 </script>
 
 </html>
