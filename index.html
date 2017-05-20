@@ -317,7 +317,7 @@ var tones = ["light", "dark"];
 var lengths = ["short", "long", "round", "square", "medium"];
 var genders = {"female":["girl", "woman"],
                 "male": ["boy", "man"]};
-var adjectives = ["visible"];
+var adjectives = ["visible", "portrait"];
 var negateUserQ = false
 
 /*
@@ -485,16 +485,14 @@ function formulateAIQ(q){
 function handle_human_answer(){
 	var human_ans = document.getElementById('input2').value; 
 	human_ans = human_ans.toLowerCase();
-	console.log("this happened");
 	if (yes.indexOf(human_ans)>=0){
 		human_ans = true;
 	}
 	else{
 		human_ans = false;
 	}
-	console.log(human_ans);
 	for (i=0; i < 24; i++){
-		if (data[i][catToIdx[ai_question]]!=human_ans){
+		if (data[i][catToIdx[ai_question]]!=human_ans &&!removed_ai[i]==1){
 			black_out_image("ai_img_"+i);
 		}
 	}
