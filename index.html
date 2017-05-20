@@ -569,7 +569,7 @@ function handle_human_answer(){
 	}
 	if (ai_question.match(numberPattern) != null){
 		if (human_ans){
-			ai_wins();
+			ai_win();
 		}
 		else{
 			black_out_image("ai_img_"+Number(ai_question.match(numberPattern)[0]));
