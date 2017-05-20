@@ -38,6 +38,7 @@
 	<button class="button" style="vertical-align:middle;" onclick="location.reload();"><span>Reset </span></button>
 	</div>
 	<h2> Sample Questions: </h2>
+	<h3 >Is your character number 5?</h3>
 	<h3 >Is your character male?</h3>
 	<h3>Is your character smiling?</h3>
 	<h3>Does your character have dark hair?</h3>
@@ -49,6 +50,7 @@ var human_choice;
 var human_question;
 var ai_question;
 var ai_choice;
+var game_over = false;
 
 var dir = "pics1";
 
@@ -110,7 +112,7 @@ var removed_ai = new Array(24+1).join('0').split('').map(parseFloat);
 var removed_human = new Array(24+1).join('0').split('').map(parseFloat);
 var is_human_turn = true;
 var turn = 0;
-var yes = ["yes", "yup", "yeah", "yes!", "yeah!", "yup!", "yea", "yea!", "affirmative"];
+var yes = ["yes", "yup", "yeah", "yes!", "yeah!", "yup!", "yea", "yea!", "affirmative", "yas", "yaaass"];
 var no = ["no", "nope", "nah", "no!", "nope!", "nah!", "negative"];
 var idk = ["I don't know..", "not sure", "I don't understand your question :(", "No comprendo", "lol idk sorry", "Alas I was not programmed to understand your question."];
 
@@ -161,6 +163,10 @@ function display_images(){
 	}
 	for (var row = 0; row < 4; row++){
     	for (var col = 0; col < 6; col++){
+    		var xdisp = 2;
+    		if (img_number < 10){
+    			xdisp = 5;
+    		}
         	svg.append("image")
             .attr("id",type + img_number)
             .attr("class", "clickable_image")
@@ -171,6 +177,20 @@ function display_images(){
             .attr("href", dir+"/pic" + img_number + ".jpg")
             .attr("xlink:href", dir+"/pic" + img_number + ".jpg")
             .on("click", function(){black_out_image(this.id);});
+            svg.append("rect")
+            .attr("x", padding_lr + (col)*padding + col*img_dim)
+            .attr("y", padding_top+ (row)*padding + (row)*img_dim)
+            .attr("height", 20)
+            .attr("width", 20)
+            .attr("fill", "white");
+            svg.append("text")
+            .text(img_number)
+            .attr("x", padding_lr + (col)*padding + col*img_dim +xdisp)
+            .attr("y",padding_top+ (row)*padding + (row)*img_dim + 15)
+            .style("font-size", "14px")
+            .style("font-weight", "bold")
+            .attr("fill","black");
+
         img_number++;
     	}
 	}
@@ -209,7 +229,9 @@ function ask_ai(){
 	svg.append("text").text('Answer from AI:').attr("class", "output_text").attr("x", 30).attr("y", 240).style("fill","#110D8C");
 	document.getElementById("input2").style.visibility="visible";
 	document.getElementById('input2').value=get_ai_answer(); 
-	document.getElementById("button2").style.visibility="visible";
+	if (!game_over){
+		document.getElementById("button2").style.visibility="visible";
+	}
 	document.getElementById("button2").innerText = "Done With Turn";
 }
 
@@ -328,6 +350,38 @@ var negateUserQ = false
  * When human asks a question, AI needs to respond with yes or no answer
  */
 function get_ai_answer(){
+	// check if there is number in string
+	var numberPattern = /\d+/g;
+	if (human_question.match(numberPattern) != null){
+		var number = Number(human_question.match(numberPattern)[0]);
+		if (number == ai_choice){
+			var svg = images_svg;
+			svg.selectAll("*").remove();
+			svg.append("image")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("height", 600)
+            .attr("width", 800)
+            .attr("href", "/fireworks.gif")
+            .attr("xlink:href", "/fireworks.gif");
+            svg.append("text")
+            .text("You Won!")
+            .attr("x", width/2)
+            .attr("y", height/2)
+            .attr("fill", "#110D8C")
+            .style("text-anchor","middle")
+            .style("font-weight", "bold")
+            .style("font-size","50px")
+            .style("font-variant","small-caps");
+            document.getElementById("button2").style.visibility="hidden";
+            game_over = true;
+            un_black_out_ai_choice();
+			return "yes";
+		}
+		else{
+			return no[Math.floor(Math.random() * no.length)];
+		}
+	}
 	var current_cat = humanQuestionToCat();
 	if (current_cat == null){
 		return idk[Math.floor(Math.random() * idk.length)];
