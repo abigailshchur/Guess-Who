@@ -499,9 +499,10 @@ function get_ai_question(){
 		ai_question = String(removed_ai.indexOf(0));
 		return "Did you pick character number "+ai_question+"?";
 	}
-	if (categories_answered.length == categories.length){
+	if (categories_answered.length == categories.length || d3.sum(removed_ai) == removed_ai.length){
         // AI ran out of questions
         window.alert("Ran out of questions, need to deal with this.");
+        return;
     }
     else{
         // Need to ask question of max entropy
@@ -566,8 +567,13 @@ function handle_human_answer(){
 	else{
 		human_ans = false;
 	}
-	if (ai_question.match(numberPattern) != null && human_ans){
-		ai_win();
+	if (ai_question.match(numberPattern) != null){
+		if (human_ans){
+			ai_wins();
+		}
+		else{
+			black_out_image("ai_img_"+Number(ai_question.match(numberPattern)[0]));
+		}
 		return;
 	}
 	for (i=0; i < 24; i++){
