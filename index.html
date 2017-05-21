@@ -228,7 +228,12 @@ function ask_ai(){
 	document.getElementById("ask_ai_button").style.visibility="hidden";
 	svg.append("text").text('Answer from AI:').attr("class", "output_text").attr("x", 30).attr("y", 240).style("fill","#110D8C");
 	document.getElementById("input2").style.visibility="visible";
-	document.getElementById('input2').value=get_ai_answer(); 
+	document.getElementById('input2').value=get_ai_answer();
+	if (idk.indexOf(document.getElementById('input2').value)>=0){
+		document.getElementById("button2").innerText = "Ask AI Another Question";
+		document.getElementById("button2").style.visibility="visible";
+		return;
+	}
 	if (!game_over){
 		document.getElementById("button2").style.visibility="visible";
 	}
@@ -300,7 +305,15 @@ function un_black_out_ai_choice(){
 
 function click_button2(){
 	if (is_human_turn){
-		ai_turn();
+		if (document.getElementById("button2").innerText === "Ask AI Another Question"){
+			if (document.getElementById('input1').value === human_question){
+				window.alert("Please ask a different. The AI does not understand this one.");
+			}
+			ask_ai();
+		}
+		else{
+			ai_turn();
+		}
 	}
 	else if (document.getElementById("button2").innerText === "Done Answering"){
 		if (document.getElementById('input2').value.length == 0){
