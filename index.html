@@ -106,17 +106,18 @@ function start(){
 	human_turn();
 }
 
-// GAME PLAY CODE BELOW
-
 var images_svg = d3.select("#images");
 var output_svg = d3.select("#output");
 var removed_ai = new Array(24+1).join('0').split('').map(parseFloat);
+var true_removed_ai = new Array(24+1).join('0').split('').map(parseFloat);
 var removed_human = new Array(24+1).join('0').split('').map(parseFloat);
 var is_human_turn = true;
 var turn = 0;
 var yes = ["yes", "yup", "yeah", "yes!", "yeah!", "yup!", "yea", "yea!", "affirmative", "yas", "yaaass"];
 var no = ["no", "nope", "nah", "no!", "nope!", "nah!", "negative"];
 var idk = ["I don't know..", "not sure", "I don't understand your question :(", "No comprendo", "lol idk sorry", "Alas I was not programmed to understand your question."];
+var start_iterating = false;
+var cat_to_ans = {};
 
 
 function human_turn(){
@@ -382,13 +383,12 @@ d3.json(dir+"/data.json", function(d) {
 function make_full_decision_tree(){
 	var tree = {};
 	var cats_ans = [];
-	var layer = 0;
 	var rem = new Array(24+1).join('0').split('').map(parseFloat);
-	var init_split = get_cat_to_split(cats_ans, rem, layer);
+	var init_split = get_cat_to_split(cats_ans, rem, 1);
 	var stack = [];
 	tree["name"] = init_split;
 	tree["children"] = [];
-	stack.push([cats_ans.slice(), rem.slice(), tree]);
+	stack.push([cats_ans.slice(), rem.slice(), tree, 1]);
 	while(stack.length>0){
 		var old_vals = stack.pop();
 		var last_cat = old_vals[0][old_vals[0].length-1];
@@ -404,7 +404,7 @@ function make_full_decision_tree(){
 				}
 			}
 		}
-		var left_cat = get_cat_to_split(old_vals[0].slice(),rem_left,layer);
+		var left_cat = get_cat_to_split(old_vals[0].slice(),rem_left,old_vals[3]);
 		var left_tree = {};
 		if (left_cat == null){
 			left_tree["name"]="iterate";
@@ -420,9 +420,9 @@ function make_full_decision_tree(){
 			cat_left_lst.push(left_cat);
 			left_tree["name"] = left_cat;
 			left_tree["children"] = [];
-			stack.push([cat_left_lst, rem_left.slice(), left_tree]);
+			stack.push([cat_left_lst, rem_left.slice(), left_tree, old_vals[3]+1]);
 		}
-		var right_cat = get_cat_to_split(old_vals[0].slice(), rem_right, layer);
+		var right_cat = get_cat_to_split(old_vals[0].slice(), rem_right, old_vals[3]);
 		var right_tree = {};
 		if (right_cat == null){
 			right_tree["name"]="iterate";
@@ -438,19 +438,15 @@ function make_full_decision_tree(){
 			cat_right_lst.push(right_cat);
 			right_tree["name"] = right_cat;
 			right_tree["children"] = [];
-			stack.push([cat_right_lst, rem_right.slice(), right_tree]);
+			stack.push([cat_right_lst, rem_right.slice(), right_tree, old_vals[3]+1]);
 		}
 		old_vals[2]["children"].push(left_tree);
 		old_vals[2]["children"].push(right_tree);
-		layer++;
 	}
-	console.log(tree);
 	make_tree(tree);
 }
 
 function get_cat_to_split(cats_ans, rem, layer){
-	//console.log("hello");
-	//console.log(cats_ans);
 	if (d3.sum(rem) == 22){
 		// removed all but 1
 		return null;
@@ -478,7 +474,6 @@ function get_cat_to_split(cats_ans, rem, layer){
     }
     var index = entropy.indexOf(d3.max(entropy));
     cats_ans.push(categories[entropy_to_cat[index]]);
-    //console.log(cats_ans);
     return categories[entropy_to_cat[index]];  
 }
 
@@ -614,44 +609,54 @@ function humanQuestionToCat(){
  * Returns question for the AI to ask (asks optimally using entropy calculation)
  */
 function get_ai_question(){
-	if (d3.sum(removed_ai) == removed_ai.length-1){
-		// ai question will just ask number of player
-		ai_question = String(removed_ai.indexOf(0));
-		return "Did you pick character number "+ai_question+"?";
-	}
 	if (categories_answered.length == categories.length || d3.sum(removed_ai) == removed_ai.length){
         // AI ran out of questions
-        window.alert("Ran out of questions, need to deal with this.");
-        return;
-    }
-    else{
-        // Need to ask question of max entropy
-        var num_possible_cats = categories.length - categories_answered.length;
-        var entropy = [];
-        var entropy_to_cat = [];
-        for (i = 0; i < categories.length; i++){
-            if (categories_answered.indexOf(categories[i]) < 0){
-                var p = 0;
-                var n = 0;
-                for (j=0; j < data.length; j++){
-                    if (!removed_ai[j]){
-                        // ai has not removed this person
-                        if (data[j][i]){
-                            p++;
-                        }
-                        else{
-                            n++;
-                        }
-                    }
-                }
-                entropy.push((-1*(p/(p+n))*Math.log(p/(p+n)))+(-1*(n/(p+n))*Math.log(n/(p+n))));
-                entropy_to_cat.push(i);
-            }
+        start_iterating = false;
+        // true_removed_ai
+        while(d3.sum(removed_ai) == removed_ai.length){
+        	var last_cat = categories_answered.pop();
+        	for (i=0; i <24; i++){
+        		if (!true_removed_ai[i] && data[i][catToIdx[last_cat]]!=cat_to_ans[last_cat]){
+        			var satisfies_all = true;
+        			for (j=0; j<categories_answered.length; j++){
+        				if(data[i][catToIdx[categories_answered[j]]] != cat_to_ans[categories_answered[j]]){
+        					satisfies_all = false;
+        				}
+        			}
+        			if (satisfies_all){
+        				removed_ai[i] = 0;
+        			}
+        		}
+        	}
         }
-        var index = entropy.indexOf(d3.max(entropy));
-        ai_question = categories[entropy_to_cat[index]];
-
-        categories_answered.push(ai_question);
+    }
+	if (d3.sum(removed_ai) == removed_ai.length-1 || start_iterating){
+		// ai question will just ask number of player
+		var options = removed_ai.reduce(function(a, e, i) {
+    		if (e ==0)
+        		a.push(i);
+    		return a;
+			}, []);
+		Math.floor(Math.random() * 24);
+		ai_question = String(options[Math.floor(Math.random()*options.length)]);
+		return "Did you pick character number "+ai_question+"?";
+	}
+    else{
+        var num_possible_cats = categories.length - categories_answered.length;
+        ai_question = get_cat_to_split(categories_answered, removed_ai, 0);
+        if (ai_question == null){
+        	start_iterating = true;
+        }
+    }
+    if (start_iterating){
+    	var options = removed_ai.reduce(function(a, e, i) {
+    		if (e ==0)
+        		a.push(i);
+    		return a;
+			}, []);
+		Math.floor(Math.random() * 24);
+		ai_question = String(options[Math.floor(Math.random()*options.length)]);
+    	return "Did you pick character number "+ai_question+"?";
     }
 	return formulateAIQ(ai_question);
 }
@@ -715,14 +720,21 @@ function handle_human_answer(){
 		human_ans = false;
 	}
 	if (ai_question.match(numberPattern) != null){
+		if (Number(ai_question)==human_choice && !human_ans){
+			window.alert("Did you just lie to the AI???? Rude.");
+			ai_win();
+			return;
+		}
 		if (human_ans){
 			ai_win();
 		}
 		else{
+			true_removed_ai[Number(ai_question)]=1;
 			black_out_image("ai_img_"+Number(ai_question.match(numberPattern)[0]));
 		}
 		return;
 	}
+	cat_to_ans[ai_question] = human_ans;
 	for (i=0; i < 24; i++){
 		if (data[i][catToIdx[ai_question]]!=human_ans &&!removed_ai[i]==1){
 			black_out_image("ai_img_"+i);

@@ -5,7 +5,7 @@ Abby:
 - [ ] Implement certainty weighted entropy calculation
 - [ ] Fix AI recognition of questions
 - [X] Allow human to re-ask when AI does not understand
-- [ ] Implement backtracking
+- [X] Implement backtracking
 - [X] Display decision tree
 - [ ] Add even more features
 
