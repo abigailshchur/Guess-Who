@@ -2,7 +2,7 @@
 
 Abby:
 - [X] Fix AI question output
-- [ ] Implement certainty weighted entropy calculation
+- [X] Implement certainty weighted entropy calculation
 - [ ] Fix AI recognition of questions
 - [X] Allow human to re-ask when AI does not understand
 - [X] Implement backtracking

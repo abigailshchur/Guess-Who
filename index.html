@@ -54,6 +54,8 @@ var ai_choice;
 var game_over = false;
 
 var dir = "pics1";
+var conf_prop = 0.5;
+var decay = 0.05;
 
 var svg = d3.select("#human_options");
 
@@ -122,7 +124,6 @@ var cat_to_ans = {};
 
 function human_turn(){
 	document.body.style.backgroundColor = "#e3e7ea";
-	turn++;
 	is_human_turn = true;
 	images_svg.selectAll("*").remove();
 	output_svg.selectAll("text").remove();
@@ -207,7 +208,7 @@ function set_up_human(){
 	svg.append("text").text('Question for AI (must have "yes" or "no" answer):').attr("class", "output_text").attr("x", 30).attr("y", 100).style("fill","#110D8C");
 	svg.append("text").text('Human Choice').attr("class", "output_text").attr("x", 500).attr("y", height-175).style("font-size", "20px").style("fill","#110D8C");
     svg.append("text").text('AI Choice').attr("class", "output_text").attr("x", 210).attr("y", height-175).style("font-size", "20px").style("fill","#110D8C");
-	if (turn==1){
+	if (turn==0){
 		svg.append("image").attr("x", 505).attr("y", height-165).attr("height", img_dim).attr("width", img_dim).attr("href", dir+"/pic" + human_choice + ".jpg").attr("xlink:href", dir+"/pic" + human_choice + ".jpg");
 		svg.append("image").attr("id", "ai_img_choice").attr("class","clickable_image").attr("x", 195).attr("y", height-165).attr("height", img_dim).attr("width", img_dim).attr("href", dir+"/pic" + ai_choice + ".jpg").attr("xlink:href", dir+"/pic" + ai_choice + ".jpg")
 			.on("click", function(){black_out_ai_choice();});
@@ -360,6 +361,7 @@ var categories = [];
 var categories_answered = [];
 var catToIdx = {};
 var feature_conf = [1,1,0,0,1,0,0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0,0,1,1,1];
+var backtracking = false; 
 
 
 d3.json(dir+"/data.json", function(d) {
@@ -472,10 +474,28 @@ function get_cat_to_split(cats_ans, rem, layer){
             entropy_to_cat.push(i);
         }
     }
-    var index = entropy.indexOf(d3.max(entropy));
-    cats_ans.push(categories[entropy_to_cat[index]]);
-    return categories[entropy_to_cat[index]];  
+    
+    if (d3.max(entropy)==null){
+    	return null;
+    }
+    if (backtracking || conf_prop==0 || conf_prop-decay*layer <= 0){
+    	var index = entropy.indexOf(d3.max(entropy));
+    	cats_ans.push(categories[entropy_to_cat[index]]);
+    	return categories[entropy_to_cat[index]];  
+    }
+    else{
+    	var entropy2 = []
+    	var scale = conf_prop-decay*layer;
+    	for (i=0; i < entropy.length; i++){
+    		entropy2.push((entropy[i]-d3.min(entropy))/(d3.max(entropy)-d3.min(entropy)));
+    		entropy2[i] = (1-scale)*entropy2[i]+scale*feature_conf[entropy_to_cat[i]];
+    	}
+    	var index = entropy2.indexOf(d3.max(entropy2));
+    	cats_ans.push(categories[entropy_to_cat[index]]);
+    	return categories[entropy_to_cat[index]];  
+	}
 }
+
 
 var colors = ["blue","black","brown","yellow","green","red","white","gray"];
 var tones = ["light", "dark"];
@@ -610,6 +630,7 @@ function humanQuestionToCat(){
  */
 function get_ai_question(){
 	if (categories_answered.length == categories.length || d3.sum(removed_ai) == removed_ai.length){
+		backtracking = true;
         // AI ran out of questions
         start_iterating = false;
         // true_removed_ai
@@ -643,7 +664,7 @@ function get_ai_question(){
 	}
     else{
         var num_possible_cats = categories.length - categories_answered.length;
-        ai_question = get_cat_to_split(categories_answered, removed_ai, 0);
+        ai_question = get_cat_to_split(categories_answered, removed_ai, turn);
         if (ai_question == null){
         	start_iterating = true;
         }
