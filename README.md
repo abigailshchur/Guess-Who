@@ -6,7 +6,7 @@ Abby:
 - [ ] Fix AI recognition of questions
 - [X] Allow human to re-ask when AI does not understand
 - [ ] Implement backtracking
-- [ ] Display decision tree
+- [X] Display decision tree
 - [ ] Add even more features
 
 

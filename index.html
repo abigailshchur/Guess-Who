@@ -2,7 +2,7 @@
 <head>
 <title>Guess Who</title>
 <link rel="stylesheet" type="text/css" href="style.css">
-<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
 <script src="https://rawgit.com/jasondavies/d3-cloud/master/build/d3.layout.cloud.js"></script>
 
@@ -45,6 +45,7 @@
 </div>
 </body>
 
+<script type="text/javascript" src="make_tree.js"></script>
 <script>
 var human_choice;
 var human_question;
@@ -101,6 +102,7 @@ function start(){
 	elem.parentNode.removeChild(elem);
 	ai_choice = Math.floor(Math.random() * 24);
 	document.getElementById("game").style.visibility="visible";
+	make_full_decision_tree();
 	human_turn();
 }
 
@@ -356,6 +358,8 @@ var data = new Array(24);;
 var categories = [];
 var categories_answered = [];
 var catToIdx = {};
+var feature_conf = [1,1,0,0,1,0,0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0,0,1,1,1];
+
 
 d3.json(dir+"/data.json", function(d) {
     for (i = 0; i < d["pic0"].length; i++){
@@ -374,6 +378,109 @@ d3.json(dir+"/data.json", function(d) {
         }
     }
 });
+
+function make_full_decision_tree(){
+	var tree = {};
+	var cats_ans = [];
+	var layer = 0;
+	var rem = new Array(24+1).join('0').split('').map(parseFloat);
+	var init_split = get_cat_to_split(cats_ans, rem, layer);
+	var stack = [];
+	tree["name"] = init_split;
+	tree["children"] = [];
+	stack.push([cats_ans.slice(), rem.slice(), tree]);
+	while(stack.length>0){
+		var old_vals = stack.pop();
+		var last_cat = old_vals[0][old_vals[0].length-1];
+		var rem_left = old_vals[1].slice();
+		var rem_right = old_vals[1].slice();
+		for (i=0; i<24; i++){
+			if (old_vals[1][i]==0){
+				if (data[i][catToIdx[last_cat]]){
+					rem_right[i]=1;
+				}
+				else{
+					rem_left[i]=1;
+				}
+			}
+		}
+		var left_cat = get_cat_to_split(old_vals[0].slice(),rem_left,layer);
+		var left_tree = {};
+		if (left_cat == null){
+			left_tree["name"]="iterate";
+			left_tree["children"] = [];
+			for (i = 0; i < 24; i++){
+				if (rem_left[i]==0){
+					left_tree["children"].push({"name":String(i)});
+				}
+			}
+		}
+		else{
+			var cat_left_lst = old_vals[0].slice();
+			cat_left_lst.push(left_cat);
+			left_tree["name"] = left_cat;
+			left_tree["children"] = [];
+			stack.push([cat_left_lst, rem_left.slice(), left_tree]);
+		}
+		var right_cat = get_cat_to_split(old_vals[0].slice(), rem_right, layer);
+		var right_tree = {};
+		if (right_cat == null){
+			right_tree["name"]="iterate";
+			right_tree["children"] = [];
+			for (i = 0; i < 24; i++){
+				if (rem_right[i]==0){
+					right_tree["children"].push({"name":String(i)});
+				}
+			}
+		}
+		else{
+			var cat_right_lst = old_vals[0].slice();
+			cat_right_lst.push(right_cat);
+			right_tree["name"] = right_cat;
+			right_tree["children"] = [];
+			stack.push([cat_right_lst, rem_right.slice(), right_tree]);
+		}
+		old_vals[2]["children"].push(left_tree);
+		old_vals[2]["children"].push(right_tree);
+		layer++;
+	}
+	console.log(tree);
+	make_tree(tree);
+}
+
+function get_cat_to_split(cats_ans, rem, layer){
+	//console.log("hello");
+	//console.log(cats_ans);
+	if (d3.sum(rem) == 22){
+		// removed all but 1
+		return null;
+	}
+    var entropy = [];
+    var entropy_to_cat = [];
+    for (i = 0; i < categories.length; i++){
+        if (cats_ans.indexOf(categories[i]) < 0){
+            var p = 0;
+            var n = 0;
+            for (j=0; j < data.length; j++){
+                if (!rem[j]){
+                    // ai has not removed this person
+                    if (data[j][i]){
+                        p++;
+                    }
+                    else{
+                        n++;
+                    }
+                }
+            }
+            entropy.push((-1*(p/(p+n))*Math.log(p/(p+n)))+(-1*(n/(p+n))*Math.log(n/(p+n))));
+            entropy_to_cat.push(i);
+        }
+    }
+    var index = entropy.indexOf(d3.max(entropy));
+    cats_ans.push(categories[entropy_to_cat[index]]);
+    //console.log(cats_ans);
+    return categories[entropy_to_cat[index]];  
+}
 
 var colors = ["blue","black","brown","yellow","green","red","white","gray"];
 var tones = ["light", "dark"];
