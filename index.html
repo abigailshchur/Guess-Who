@@ -368,7 +368,7 @@ var lengths = ["short", "long", "round", "square", "medium"];
 var genders = {"female":["girl", "woman"],
                 "male": ["boy", "man"]};
 var adjectives = ["visible", "portrait"];
-var negateUserQ = false
+var negateUserQ = false;
 
 /*
  * All important AI Code is below
@@ -543,10 +543,13 @@ function get_ai_question(){
 function formulateAIQ(q){
     var words = q.split(" ");
     var first = words[0];
-    if (colors.indexOf(first)>=0 || tones.indexOf(first)>=0 || lengths.indexOf(first)>=0){
+    if (first === "medium"){
+    	return "Do they have medium length hair";
+    }
+    if (tones.indexOf(first)>=0 || lengths.indexOf(first)>=0 || first === "glasses"){
         return "Do they have " + q + "?";
     }
-    else if (adjectives.indexOf(first)>=0){
+    else if (adjectives.indexOf(first)>=0 || colors.indexOf(first)>=0){
     	return "Do they have a " + q + "?";
     }
     else{
@@ -583,6 +586,14 @@ function handle_human_answer(){
 	}
 }
 
+
+function print_all_that_shit(){
+	for (var i=0; i < categories.length; i++){
+		console.log(formulateAIQ(categories[i]));
+	}
+}
+
+console.log(print_all_that_shit);
 
 
 
