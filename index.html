@@ -546,11 +546,35 @@ function formulateAIQ(q){
     if (first === "medium"){
     	return "Do they have medium length hair";
     }
-    if (tones.indexOf(first)>=0 || lengths.indexOf(first)>=0 || first === "glasses"){
+    else if (tones.indexOf(first)>=0 || lengths.indexOf(first)>=0 || first === "glasses"||first==="facial"){
         return "Do they have " + q + "?";
+    }
+    else if (first === "collar"){
+    	return "Do they hava a visible "+q+"?";
+    }
+    else if (first==="teeth"){
+    	return "Are their "+q+" visible?";
+    }
+    else if (first === "jewelry"|| first==="earrings"){
+    	return "Do they have visible "+q+"?";
     }
     else if (adjectives.indexOf(first)>=0 || colors.indexOf(first)>=0){
     	return "Do they have a " + q + "?";
+    }
+    else if (first==="other"){
+    	return "Can you see "+q+" in the image?";
+    }
+    else if (first==="flag"){
+    	return "Can you see a "+q+" in the image?";
+    }
+    else if (first==="left" || first==="forward" || first==="right"){
+    	return "Are they facing "+q+"?";
+    }
+    else if (first==="headwear"){
+    	return "Are they wearing headwear?";
+    }
+    else if (first==="hat"){
+    	return "Are they wearing a hat?";
     }
     else{
         return "Are they " + q + "?";
@@ -585,15 +609,6 @@ function handle_human_answer(){
 		}
 	}
 }
-
-
-function print_all_that_shit(){
-	for (var i=0; i < categories.length; i++){
-		console.log(formulateAIQ(categories[i]));
-	}
-}
-
-console.log(print_all_that_shit);
 
 
 
