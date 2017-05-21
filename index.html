@@ -53,12 +53,13 @@ var ai_question;
 var ai_choice;
 var game_over = false;
 
-var dir = "pics1";
-var validDir = ["pics1", "pics2", "pics3", "pics4", "pics5", "pics6", "pics7", "pics8", "pics9", "pics10"];
+//var dir = "pics1";
+/*var validDir = ["pics1", "pics2", "pics3", "pics4", "pics5", "pics6", "pics7", "pics8", "pics9", "pics10"];
 dir = "pics"+prompt("Enter a number from 1 to 10: (1 is easiest)", "1");
 while (validDir.indexOf(dir) < 0) {
 	dir = "pics"+prompt("You did not pick a number from 1 to 10", 1);
-}
+}*/
+var dir = "pics"+String(Math.floor(Math.random() * 10)+1);
 var conf_prop = 0.5;
 var decay = 0.05;
 
@@ -505,8 +506,8 @@ function get_cat_to_split(cats_ans, rem, layer){
 var colors = ["blue","black","brown","yellow","green","red","white","gray"];
 var tones = ["light", "dark"];
 var lengths = ["short", "long", "round", "square", "medium"];
-var genders = {"female":["girl", "woman"],
-                "male": ["boy", "man"]};
+var genders = {"female":["girl", "woman", "gal"],
+                "male": ["boy", "man", "guy"]};
 var adjectives = ["visible", "portrait"];
 var negateUserQ = false;
 
