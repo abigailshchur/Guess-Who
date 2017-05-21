@@ -54,6 +54,11 @@ var ai_choice;
 var game_over = false;
 
 var dir = "pics1";
+var validDir = ["pics1", "pics2", "pics3", "pics4", "pics5", "pics6", "pics7", "pics8", "pics9", "pics10"];
+dir = "pics"+prompt("Enter a number from 1 to 10: (1 is easiest)", "1");
+while (validDir.indexOf(dir) < 0) {
+	dir = "pics"+prompt("You did not pick a number from 1 to 10", 1);
+}
 var conf_prop = 0.5;
 var decay = 0.05;
 
@@ -372,7 +377,7 @@ d3.json(dir+"/data.json", function(d) {
     for (i = 0; i < 24; i++) {
         data[i] = new Array(categories.length);
         for (j = 0; j<categories.length; j++){
-            if (d["pic"+i][j][categories[j]] === "yes"){
+            if (d["pic"+String(i)][j][categories[j]] == "yes"){
                 data[i][j] = true;
             }
             else{

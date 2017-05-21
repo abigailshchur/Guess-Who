@@ -8,6 +8,7 @@ Abby:
 - [X] Implement backtracking
 - [X] Display decision tree
 - [ ] Add even more features
+- [X] Option for more datasets
 
 
 Claire:
