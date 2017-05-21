@@ -215,6 +215,7 @@ function set_up_human(){
 	svg.append("text").text('Human Choice').attr("class", "output_text").attr("x", 500).attr("y", height-175).style("font-size", "20px").style("fill","#110D8C");
     svg.append("text").text('AI Choice').attr("class", "output_text").attr("x", 210).attr("y", height-175).style("font-size", "20px").style("fill","#110D8C");
 	if (turn==0){
+		window.alert("Communicate with the AI until someone wins. Game ends when someone correctly asks a question of the form 'Did you pick character 5' or something like that (You just need the number in the question). When it is the human turn, AI might not understand your question. If this is the case, you get to ask again. After the AI answers your question, you can block out images that you do not believe are the AIs choice by clicking on them. AI will automatically do the same thing on their turn.");
 		svg.append("image").attr("x", 505).attr("y", height-165).attr("height", img_dim).attr("width", img_dim).attr("href", dir+"/pic" + human_choice + ".jpg").attr("xlink:href", dir+"/pic" + human_choice + ".jpg");
 		svg.append("image").attr("id", "ai_img_choice").attr("class","clickable_image").attr("x", 195).attr("y", height-165).attr("height", img_dim).attr("width", img_dim).attr("href", dir+"/pic" + ai_choice + ".jpg").attr("xlink:href", dir+"/pic" + ai_choice + ".jpg")
 			.on("click", function(){black_out_ai_choice();});
