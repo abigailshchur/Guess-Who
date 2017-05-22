@@ -319,7 +319,7 @@ function click_button2(){
 	if (is_human_turn){
 		if (document.getElementById("button2").innerText === "Ask AI Another Question"){
 			if (document.getElementById('input1').value === human_question){
-				window.alert("Please ask a different. The AI does not understand this one.");
+				window.alert("Please ask a different question. The AI does not understand this one.");
 			}
 			ask_ai();
 		}
