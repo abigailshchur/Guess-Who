@@ -541,6 +541,8 @@ function get_ai_answer(){
 		}
 	}
 	var current_cat = humanQuestionToCat();
+	console.log(current_cat);
+	console.log(negateUserQ);
 	if (current_cat == null){
 		return idk[Math.floor(Math.random() * idk.length)];
 	}
@@ -575,14 +577,48 @@ function humanQuestionToCat(){
     while(hq.length != oldLen){
         oldLen = hq.length;
         hq = hq.replace("?", "");
+        hq = hq.replace(".", "");
+        hq = hq.replace("-", " ");
+        hq = hq.replace("!", " ");
     }
     hq = hq.replace(/\s+/g, " ").trim();
     if (catToIdx[hq] != null){
         return hq;
     }
     var words = hq.split(" ");
-    if (words.length == 1){
-        // might be another gender term
+    var c = null;
+    // deal with possibility of gender category
+    c = check_gender(words);
+    if (c != null){
+    	return c;
+    }
+    // deal with hair related question
+    c = check_hair(words);
+    if (c != null){
+    	return c;
+    }
+
+    c = check_others(words);
+    if (c != null){
+    	return c;
+    }
+    // deal with race related question
+    c = check_race(words);
+    if (c != null){
+    	return c;
+    }
+
+    // deal with clothing
+    c = check_clothing(words);
+    if (c != null){
+    	return c;
+    }
+    return null;
+}
+
+
+function check_gender(words){
+	if (words.length == 1){
         if (words[0] === "female" || genders["female"].indexOf(words[0]) >= 0){
             negateUserQ = true;
             return "male";
@@ -591,48 +627,199 @@ function humanQuestionToCat(){
             return "male";
         }
     }
-    else if (words.length == 2){
-        // check gender
-        if (words[1] === "female" || genders["female"].indexOf(words[1]) >= 0){
-            negateUserQ = true;
-            return "male";
-        }
-        if (words[1] === "male" || genders["male"].indexOf(words[1]) >= 0){
-            return "male";
-        }
-    }
     else{
-        if (words.indexOf("not") >=0 || words.indexOf("no") >= 0){
-            negateUserQ = true;
-        }
-        while (words.indexOf("not") >= 0){
-            var index = words.indexOf("not");
-            words.splice(index, 1);
-        }
-        while (words.indexOf("no") >= 0){
-            var index = words.indexOf("no");
-            words.splice(index, 1);
-        }
-        // now just check if last two words are ok
-        if (words.length >= 2){
-            if (catToIdx[words[words.length-2]+" "+words[words.length-1]] != null){
-                return words[words.length-2]+" "+words[words.length-1];
-            }
-        }
-        if (catToIdx[words[words.length-1]] != null){
-            return words[words.length-1];
-        }
-        if (words[words.length-1] === "female" || genders["female"].indexOf(words[words.length-1]) >= 0){
-            negateUserQ = true;
-            return "male";
-        }
-        if (genders["male"].indexOf(words[words.length-1]) >= 0){
-            return "male";
-        }
+    	if (words.indexOf("no")>=0||words.indexOf("not")>=0){
+    		negateUserQ = true;
+    	}
+    	if (words.indexOf("female")>=0){
+    		negateUserQ = !negateUserQ;
+    		return "male";
+    	}
+    	else if (words.indexOf("male")>=0){
+    		return "male";
+    	}
+    	else{
+    		for (i=0; i < genders["female"].length; i++){
+    			if (words.indexOf(genders["female"][i]) >=0){
+    				negateUserQ = !negateUserQ;
+    				return "male";
+    			}
+    		}
+    		for (i=0; i < genders["male"].length; i++){
+    			if (words.indexOf(genders["male"][i]) >=0){
+    				return "male";
+    			}
+    		}
+    	}
     }
+    netageUserQ = false;
     return null;
 }
 
+function check_hair(words){
+	var long_hair = {"name":"long","other":[""]}
+	// check for bald
+	if (words.indexOf("hair")>=0){
+		// check if its hair on head
+		if (words.indexOf("no")>=0 || words.indexOf("not")>=0){
+			negateUserQ=true;
+		}
+		if (words.indexOf("white")>=0 || words.indexOf("gray")>=0 || words.indexOf("grey")>=0 || words.indexOf("graying")>=0 || words.indexOf("greying")>=0 || words.indexOf("silver")>=0 || words.indexOf("bleach")>=0 || words.indexOf("bleached")>=0){
+			return "white hair";
+		}
+		if (words.indexOf("long")>=0 || words.indexOf("lengthy")>=0){
+			return "long hair";
+		}
+		if (words.indexOf("medium")>=0 || words.indexOf("shoulder")>=0){
+			return "medium hair";
+		}
+		if (words.indexOf("short")>=0 || words.indexOf("shorter")>=0 ){
+			return "short hair";
+		}
+		if (words.indexOf("dark")>=0 || words.indexOf("black")>=0 || words.indexOf("brown")>=0){
+			return "dark hair";
+		}
+		if (words.indexOf("light")>=0 || words.indexOf("chestnut")>=0 || words.indexOf("red")>=0 || words.indexOf("auborn")>=0|| words.indexOf("yellow")>=0 || words.indexOf("fair")>=0){
+			negateUserQ = !negateUserQ;
+			return "dark hair";
+		}
+		// check if its facial hair
+		if (words.indexOf("face")>=0 || words.indexOf("facial")>=0){
+			return "facial hair";
+		}
+
+		// check a few key words that we do not deal with
+		if (words.indexOf("curly")>=0 || words.indexOf("wavy")>=0 || words.indexOf("straight")>=0){
+			negateUserQ = false;
+			return null;
+		}
+		// if none of those, must be asking if they have hair in general
+		negateUserQ = !negateUserQ;
+		return "bald";
+	}
+	if (words.indexOf("no")>=0 || words.indexOf("not")>=0){
+		negateUserQ=true;
+	}
+	if (words.indexOf("beard")>=0 || words.indexOf("mustache")>=0 || words.indexOf("goatee")>=0 || words.indexOf("moustache")>=0 || words.indexOf("stubble")>=0|| words.indexOf("fuzz")>=0 ){
+		return "facial hair";
+	}
+	if (words.indexOf("bald")>=0 || words.indexOf("balding")>=0 || words.indexOf("receding")>=0){
+		return "bald";
+	}
+	negateUserQ = false;
+	return null;
+}
+
+function check_race(words){
+	if (words.indexOf("no")>=0 || words.indexOf("not")>=0){
+		negateUserQ=true;
+	}
+	if (words.indexOf("caucasian")>=0 || words.indexOf("white")>=0){
+		return "caucasian";
+	}
+	if (words.indexOf("skin")>=0){
+		if (words.indexOf("dark")>=0){
+			negateUserQ = !negateUserQ;
+			return "caucasian";
+		}
+	}
+
+	negateUserQ = false;
+	return null;
+}
+
+function check_clothing(words){
+	if (words.indexOf("no")>=0 || words.indexOf("not")>=0){
+		negateUserQ=true;
+	}
+	if (words.indexOf("shirt")>=0 || words.indexOf("jacket")>=0 || words.indexOf("wearing")>=0 || words.indexOf("coat")>=0 ){
+		if (words.indexOf("shirt")>=0 && words.indexOf("blue")>=0){
+			return "blue shirt";
+		}
+	}
+	negateUserQ = false;
+	return null;
+}
+
+function check_others(words){
+	if (words.indexOf("no")>=0 || words.indexOf("not")>=0){
+		negateUserQ=true;
+	}
+	if (words.indexOf("sun")>=0 || words.indexOf("sunglasses")>=0){
+		return "sunglasses";
+	}
+	if (words.indexOf("glasses")>=0){
+		return "glasses";
+	}
+	if (words.indexOf("smiling")>=0 || words.indexOf("smile")>=0 || words.indexOf("happy")>=0 || words.indexOf("smirk")>=0 || words.indexOf("smirking")>=0){
+		return "smiling";
+	}
+	if (words.indexOf("frowning")>=0|| words.indexOf("frown")>=0 || words.indexOf("sad")>=0 || words.indexOf("angry")>=0){
+		negateUserQ= !negateUserQ;
+		return "smiling";
+	}
+	if (words.indexOf("collar")>=0 || words.indexOf("collared")>=0){
+		return "collar";
+	}
+	if (words.indexOf("teeth")>=0){
+		return "teeth";
+	}
+	if (words.indexOf("closed")>=0 || words.indexOf("close")>=0){
+		negateUserQ = !negateUserQ;
+		return "teeth";
+	}
+	if (words.indexOf("jewelry")>=0 || words.indexOf("necklace")>=0 || words.indexOf("ring")>=0 || words.indexOf("rings")>=0){
+		return "jewelry";
+	}
+	if (words.indexOf("ear")>=0 || words.indexOf("earring")>=0 || words.indexOf("earrings")>=0){
+		return "earrings";
+	}
+	if (words.indexOf("flag")>=0 || words.indexOf("flags")>=0){
+		return "flag";
+	}
+	if (words.indexOf("left")>=0){
+		return "left";
+	}
+	if (words.indexOf("right")>=0){
+		return "right";
+	}
+	if (words.indexOf("forward")>=0 || words.indexOf("straight")>=0 || words.indexOf("ahead")>=0){
+		return "forward";
+	}
+	if (words.indexOf("headwear")>=0 || (words.indexOf("wearing")>=0 && words.indexOf("head")>=0)){
+		return "headwear";
+	}
+	if (words.indexOf("hat")>=0 || words.indexOf("cap")>=0 ){
+		return "hat";
+	}
+
+	if (words.indexOf("background")>=0 || words.indexOf("wall")>=0){
+		if (words.indexOf("plane")>=0 || words.indexOf("portrait")>=0 || words.indexOf("monotone")>=0 || words.indexOf("simple")>=0){
+			return "portrait background";
+		}
+	}
+
+	if (words.indexOf("other")>=0 || words.indexOf("another")>=0){
+		if (words.indexOf("people")>=0 || words.indexOf("person")>= 0 || words.indexOf("human")>=0 || words.indexOf("individual")>=0){
+			return "other people";
+		}
+		if (words.indexOf("face")>=0 || words.indexOf("faces")>= 0){
+			return "other faces";
+		}
+	}
+
+	if (words.indexOf("only")>=0 || words.indexOf("single")>=0){
+		negateUserQ = !negateUserQ;
+		if (words.indexOf("people")>=0 || words.indexOf("person")>= 0 || words.indexOf("human")>=0 || words.indexOf("individual")>=0){
+			return "other people";
+		}
+		if (words.indexOf("face")>=0 || words.indexOf("faces")>= 0){
+			return "other faces";
+		}
+	}
+	negateUserQ=false;
+	return null;
+}
 /*
  * Returns question for the AI to ask (asks optimally using entropy calculation)
  */
@@ -742,10 +929,14 @@ function handle_human_answer(){
 	var human_ans = document.getElementById('input2').value; 
 	human_ans = human_ans.toLowerCase();
 	var numberPattern = /\d+/g;
-	if (yes.indexOf(human_ans)>=0){
+	if (yes.indexOf(human_ans)>=0 || human_ans[0]==="y"){
 		human_ans = true;
 	}
+	else if (no.indexOf(human_ans)>=0 || human_ans[0]==="n"){
+		human_ans = false;
+	}
 	else{
+		window.alert("I'll assume you meant 'no'.");
 		human_ans = false;
 	}
 	if (ai_question.match(numberPattern) != null){
