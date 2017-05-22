@@ -124,3 +124,8 @@ input[type=text]:focus {
   stroke: #ccc;
   stroke-width: 1.5px;
 }
+
+div {
+    overflow: hidden;
+    white-space: nowrap;
+}
