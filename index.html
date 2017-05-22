@@ -121,9 +121,9 @@ var true_removed_ai = new Array(24+1).join('0').split('').map(parseFloat);
 var removed_human = new Array(24+1).join('0').split('').map(parseFloat);
 var is_human_turn = true;
 var turn = 0;
-var yes = ["yes", "yup", "yeah", "yes!", "yeah!", "yup!", "yea", "yea!", "affirmative", "yas", "yaaass"];
-var no = ["no", "nope", "nah", "no!", "nope!", "nah!", "negative"];
-var idk = ["I don't know..", "not sure", "I don't understand your question :(", "No comprendo", "lol idk sorry", "Alas I was not programmed to understand your question."];
+var yes = ["yes", "yup", "yeah", "affirmative"];
+var no = ["no", "nope", "nah", "negative"];
+var idk = ["I'm not really sure.", "I don't know.", "I don't understand. Can you ask something else?", "I was not taught to understand your question."];
 var start_iterating = false;
 var cat_to_ans = {};
 
@@ -344,14 +344,18 @@ function ai_win(){
 	var svg = images_svg;
 	svg.selectAll("*").remove();
 	svg.append("image")
-    .attr("x", 0)
+    //.attr("x", 0)
+    .attr("x", 270)
     .attr("y", 0)
     .attr("height", 300)
-    .attr("width", 800)
-    .attr("href", "loser.gif")
-    .attr("xlink:href", "loser.gif");
+    .attr("width", 300)
+    //.attr("width", 800)
+    //.attr("href", "loser.gif")
+    //.attr("xlink:href", "loser.gif");
+    .attr("href", "sad.png")
+    .attr("xlink:href", "sad.png");
     svg.append("text")
-        .text("AI Won. You Lost. How Embarassing.")
+        .text("AI Won. You Lost.")
         .attr("x", width/2)
         .attr("y", height/2+100)
         .attr("fill", "#660000")
