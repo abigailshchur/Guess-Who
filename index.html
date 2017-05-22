@@ -704,7 +704,7 @@ function formulateAIQ(q){
         return "Do they have " + q + "?";
     }
     else if (first === "collar"){
-    	return "Do they hava a visible "+q+"?";
+    	return "Do they have a visible "+q+"?";
     }
     else if (first==="teeth"){
     	return "Are their "+q+" visible?";
@@ -750,7 +750,7 @@ function handle_human_answer(){
 	}
 	if (ai_question.match(numberPattern) != null){
 		if (Number(ai_question)==human_choice && !human_ans){
-			window.alert("Did you just lie to the AI???? Rude.");
+			window.alert("Did you just lie to the AI? How Rude.");
 			ai_win();
 			return;
 		}
